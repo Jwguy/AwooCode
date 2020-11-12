@@ -16,7 +16,7 @@
 		/obj/item/ammo_magazine/clip/c762/hunter = 9,
 		/obj/item/weapon/gun/projectile/shotgun/pump/rifle = 2)
 
-/obj/structure/closet/secure_closet/guncabinet/rifle/initialize()
+/obj/structure/closet/secure_closet/guncabinet/rifle/Initialize()
 	if(prob(85))
 		starts_with += /obj/item/weapon/gun/projectile/shotgun/pump/rifle
 	else
@@ -24,11 +24,12 @@
 	return ..()
 
 /obj/structure/closet/secure_closet/guncabinet/phase
-	name = "phase pistol cabinet"
+	name = "explorer weapon cabinet"
 	req_one_access = list(access_explorer,access_brig)
 
 	starts_with = list(
 		/obj/item/weapon/gun/energy/phasegun = 2,
+		/obj/item/weapon/gun/energy/phasegun/pistol,
 		/obj/item/weapon/cell/device/weapon = 2,
 		/obj/item/clothing/accessory/permit/gun/planetside)
 
@@ -51,9 +52,11 @@
 		/obj/item/device/geiger,
 		/obj/item/weapon/cell/device,
 		/obj/item/device/radio,
-		/obj/item/stack/marker_beacon/thirty)
+		/obj/item/stack/marker_beacon/thirty,
+		/obj/item/device/cataloguer
+		)
 
-/obj/structure/closet/secure_closet/explorer/initialize()
+/obj/structure/closet/secure_closet/explorer/Initialize()
 	if(prob(50))
 		starts_with += /obj/item/weapon/storage/backpack
 	else
@@ -71,13 +74,8 @@
 /obj/structure/closet/secure_closet/sar
 	name = "search and rescue locker"
 	desc = "Supplies for a wilderness first responder."
-	icon_state = "medical1"
-	icon_closed = "medical"
-	icon_locked = "medical1"
-	icon_opened = "medicalopen"
-	icon_broken = "medicalbroken"
-	icon_off = "medicaloff"
 	req_access = list(access_medical_equip)
+	closet_appearance = /decl/closet_appearance/secure_closet/medical
 
 	starts_with = list(
 		/obj/item/weapon/storage/backpack/dufflebag/emt,
@@ -129,7 +127,7 @@
 		/obj/item/weapon/cell/device,
 		/obj/item/device/radio)
 
-/obj/structure/closet/secure_closet/pilot/initialize()
+/obj/structure/closet/secure_closet/pilot/Initialize()
 	if(prob(50))
 		starts_with += /obj/item/weapon/storage/backpack
 	else

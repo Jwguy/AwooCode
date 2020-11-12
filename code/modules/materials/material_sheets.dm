@@ -6,6 +6,7 @@
 	w_class = ITEMSIZE_NORMAL
 	throw_speed = 3
 	throw_range = 3
+	center_of_mass = null
 	max_amount = 50
 	item_icons = list(
 		slot_l_hand_str = 'icons/mob/items/lefthand_material.dmi',
@@ -13,14 +14,15 @@
 		)
 
 	var/default_type = DEFAULT_WALL_MATERIAL
-	var/material/material
+	var/datum/material/material
 	var/perunit = SHEET_MATERIAL_AMOUNT
 	var/apply_colour //temp pending icon rewrite
+	drop_sound = 'sound/items/drop/axe.ogg'
+	pickup_sound = 'sound/items/pickup/axe.ogg'
 
 /obj/item/stack/material/New()
 	..()
-	pixel_x = rand(0,4)-4
-	pixel_y = rand(0,4)-4
+	randpixel_xy()
 
 	if(!default_type)
 		default_type = DEFAULT_WALL_MATERIAL
@@ -37,8 +39,8 @@
 	if(apply_colour)
 		color = material.icon_colour
 
-	if(material.conductive)
-		flags |= CONDUCT
+	if(!material.conductive)
+		flags |= NOCONDUCT
 
 	matter = material.get_matter()
 	update_strings()
@@ -87,6 +89,18 @@
 		return
 	return ..()
 
+//VOREStation Add
+/obj/item/stack/material/attack(mob/living/M as mob, mob/living/user as mob)
+	if(M.handle_eat_minerals(src, user))
+		return
+	..()
+
+/obj/item/stack/material/attack_generic(var/mob/living/user) //Allow adminbussed mobs to eat ore if they click it while NOT on help intent.
+	if(user.handle_eat_minerals(src))
+		return
+	..()
+//VOREStation Add End
+
 /obj/item/stack/material/iron
 	name = "iron"
 	icon_state = "sheet-silver"
@@ -99,24 +113,30 @@
 	icon_state = "sheet-adamantine"
 	default_type = "lead"
 	apply_colour = 1
-	no_variants = TRUE
+	no_variants = FALSE
 
 /obj/item/stack/material/sandstone
 	name = "sandstone brick"
 	icon_state = "sheet-sandstone"
 	default_type = "sandstone"
 	no_variants = FALSE
+	drop_sound = 'sound/items/drop/boots.ogg'
+	pickup_sound = 'sound/items/pickup/boots.ogg'
 
 /obj/item/stack/material/marble
 	name = "marble brick"
 	icon_state = "sheet-marble"
 	default_type = "marble"
 	no_variants = FALSE
+	drop_sound = 'sound/items/drop/boots.ogg'
+	pickup_sound = 'sound/items/pickup/boots.ogg'
 
 /obj/item/stack/material/diamond
 	name = "diamond"
 	icon_state = "sheet-diamond"
 	default_type = "diamond"
+	drop_sound = 'sound/items/drop/glass.ogg'
+	pickup_sound = 'sound/items/pickup/glass.ogg'
 
 /obj/item/stack/material/uranium
 	name = "uranium"
@@ -129,11 +149,20 @@
 	icon_state = "sheet-phoron"
 	default_type = "phoron"
 	no_variants = FALSE
+	drop_sound = 'sound/items/drop/glass.ogg'
+	pickup_sound = 'sound/items/pickup/glass.ogg'
 
 /obj/item/stack/material/plastic
 	name = "plastic"
 	icon_state = "sheet-plastic"
 	default_type = "plastic"
+	no_variants = FALSE
+
+/obj/item/stack/material/graphite
+	name = "graphite"
+	icon_state = "sheet-silver"
+	default_type = MAT_GRAPHITE
+	apply_colour = 1
 	no_variants = FALSE
 
 /obj/item/stack/material/gold
@@ -214,12 +243,111 @@
 	no_variants = FALSE
 
 /obj/item/stack/material/durasteel/hull
-	name = "MAT_DURASTEELHULL"
+	name = MAT_DURASTEELHULL
+
+/obj/item/stack/material/titanium
+	name = MAT_TITANIUM
+	icon_state = "sheet-silver"
+	item_state = "sheet-silver"
+	default_type = MAT_TITANIUM
+	no_variants = FALSE
+
+/obj/item/stack/material/titanium/hull
+	name = MAT_TITANIUMHULL
+	default_type = MAT_TITANIUMHULL
+
+// Particle Smasher and Exotic material.
+/obj/item/stack/material/verdantium
+	name = MAT_VERDANTIUM
+	icon_state = "sheet-wavy"
+	item_state = "mhydrogen"
+	default_type = MAT_VERDANTIUM
+	no_variants = FALSE
+	apply_colour = TRUE
+
+/obj/item/stack/material/morphium
+	name = MAT_MORPHIUM
+	icon_state = "sheet-wavy"
+	item_state = "mhydrogen"
+	default_type = MAT_MORPHIUM
+	no_variants = FALSE
+	apply_colour = TRUE
+
+/obj/item/stack/material/morphium/hull
+	name = MAT_MORPHIUMHULL
+	default_type = MAT_MORPHIUMHULL
+
+/obj/item/stack/material/valhollide
+	name = MAT_VALHOLLIDE
+	icon_state = "sheet-gem"
+	item_state = "diamond"
+	default_type = MAT_VALHOLLIDE
+	no_variants = FALSE
+	apply_colour = TRUE
+
+// Forged in the equivalent of Hell, one piece at a time.
+/obj/item/stack/material/supermatter
+	name = MAT_SUPERMATTER
+	icon_state = "sheet-super"
+	item_state = "diamond"
+	default_type = MAT_SUPERMATTER
+	apply_colour = TRUE
+
+/obj/item/stack/material/supermatter/proc/update_mass()	// Due to how dangerous they can be, the item will get heavier and larger the more are in the stack.
+	slowdown = amount / 10
+	w_class = min(5, round(amount / 10) + 1)
+	throw_range = round(amount / 7) + 1
+
+/obj/item/stack/material/supermatter/use(var/used)
+	. = ..()
+	update_mass()
+	return
+
+/obj/item/stack/material/supermatter/attack_hand(mob/user)
+	. = ..()
+
+	update_mass()
+	SSradiation.radiate(src, 5 + amount)
+	var/mob/living/M = user
+	if(!istype(M))
+		return
+
+	var/burn_user = TRUE
+	if(istype(M, /mob/living/carbon/human))
+		var/mob/living/carbon/human/H = user
+		var/obj/item/clothing/gloves/G = H.gloves
+		if(istype(G) && ((G.flags & THICKMATERIAL && prob(70)) || istype(G, /obj/item/clothing/gloves/gauntlets)))
+			burn_user = FALSE
+
+		if(burn_user)
+			H.visible_message("<span class='danger'>\The [src] flashes as it scorches [H]'s hands!</span>")
+			H.apply_damage(amount / 2 + 5, BURN, "r_hand", used_weapon="Supermatter Chunk")
+			H.apply_damage(amount / 2 + 5, BURN, "l_hand", used_weapon="Supermatter Chunk")
+			H.drop_from_inventory(src, get_turf(H))
+			return
+
+	if(istype(user, /mob/living/silicon/robot))
+		burn_user = FALSE
+
+	if(burn_user)
+		M.apply_damage(amount, BURN, null, used_weapon="Supermatter Chunk")
+
+/obj/item/stack/material/supermatter/ex_act(severity)	// An incredibly hard to manufacture material, SM chunks are unstable by their 'stabilized' nature.
+	if(prob((4 / severity) * 20))
+		SSradiation.radiate(get_turf(src), amount * 4)
+		explosion(get_turf(src),round(amount / 12) , round(amount / 6), round(amount / 3), round(amount / 25))
+		qdel(src)
+		return
+	SSradiation.radiate(get_turf(src), amount * 2)
+	..()
 
 /obj/item/stack/material/wood
 	name = "wooden plank"
 	icon_state = "sheet-wood"
 	default_type = MAT_WOOD
+	strict_color_stacking = TRUE
+	drop_sound = 'sound/items/drop/wooden.ogg'
+	pickup_sound = 'sound/items/pickup/wooden.ogg'
 
 /obj/item/stack/material/wood/sif
 	name = "alien wooden plank"
@@ -236,6 +364,8 @@
 	w_class = ITEMSIZE_HUGE
 	description_info = "Use inhand to craft things, or use a sharp and edged object on this to convert it into two wooden planks."
 	var/plank_type = /obj/item/stack/material/wood
+	drop_sound = 'sound/items/drop/wooden.ogg'
+	pickup_sound = 'sound/items/pickup/wooden.ogg'
 
 /obj/item/stack/material/log/sif
 	name = "alien log"
@@ -251,7 +381,7 @@
 		user.setClickCooldown(time)
 		if(do_after(user, time, src) && use(1))
 			to_chat(user, "<span class='notice'>You cut up a log into planks.</span>")
-			playsound(get_turf(src), 'sound/effects/woodcutting.ogg', 50, 1)
+			playsound(src, 'sound/effects/woodcutting.ogg', 50, 1)
 			var/obj/item/stack/material/wood/existing_wood = null
 			for(var/obj/item/stack/material/wood/M in user.loc)
 				if(M.material.name == src.material.name)
@@ -271,12 +401,32 @@
 	icon_state = "sheet-cloth"
 	default_type = "cloth"
 	no_variants = FALSE
+	pass_color = TRUE
+	strict_color_stacking = TRUE
+	drop_sound = 'sound/items/drop/clothing.ogg'
+	pickup_sound = 'sound/items/pickup/clothing.ogg'
+
+/obj/item/stack/material/cloth/diyaab
+	color = "#c6ccf0"
+
+/obj/item/stack/material/resin
+	name = "resin"
+	icon_state = "sheet-resin"
+	default_type = "resin"
+	no_variants = TRUE
+	apply_colour = TRUE
+	pass_color = TRUE
+	strict_color_stacking = TRUE
 
 /obj/item/stack/material/cardboard
 	name = "cardboard"
 	icon_state = "sheet-card"
 	default_type = "cardboard"
 	no_variants = FALSE
+	pass_color = TRUE
+	strict_color_stacking = TRUE
+	drop_sound = 'sound/items/drop/cardboardbox.ogg'
+	pickup_sound = 'sound/items/pickup/cardboardbox.ogg'
 
 /obj/item/stack/material/snow
 	name = "snow"
@@ -294,14 +444,31 @@
 	name = "leather"
 	desc = "The by-product of mob grinding."
 	icon_state = "sheet-leather"
-	default_type = "leather"
+	default_type = MAT_LEATHER
 	no_variants = FALSE
+	pass_color = TRUE
+	strict_color_stacking = TRUE
+	drop_sound = 'sound/items/drop/leather.ogg'
+	pickup_sound = 'sound/items/pickup/leather.ogg'
+
+/obj/item/stack/material/chitin
+	name = "chitin"
+	desc = "The by-product of mob grinding."
+	icon_state = "chitin"
+	default_type = MAT_CHITIN
+	no_variants = FALSE
+	pass_color = TRUE
+	strict_color_stacking = TRUE
+	drop_sound = 'sound/items/drop/leather.ogg'
+	pickup_sound = 'sound/items/pickup/leather.ogg'
 
 /obj/item/stack/material/glass
 	name = "glass"
 	icon_state = "sheet-glass"
 	default_type = "glass"
 	no_variants = FALSE
+	drop_sound = 'sound/items/drop/glass.ogg'
+	pickup_sound = 'sound/items/pickup/glass.ogg'
 
 /obj/item/stack/material/glass/reinforced
 	name = "reinforced glass"

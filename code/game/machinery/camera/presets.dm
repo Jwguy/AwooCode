@@ -25,10 +25,10 @@ var/global/list/station_networks = list(
 var/global/list/engineering_networks = list(
 										NETWORK_ENGINE,
 										NETWORK_ENGINEERING,
-										NETWORK_ENGINEERING_OUTPOST,
-										"Atmosphere Alarms",
-										"Fire Alarms",
-										"Power Alarms")
+										//NETWORK_ENGINEERING_OUTPOST,	//VOREStation Edit: Tether has no Engineering Outpost,
+										NETWORK_ALARM_ATMOS,
+										NETWORK_ALARM_FIRE,
+										NETWORK_ALARM_POWER)
 /obj/machinery/camera/network/crescent
 	network = list(NETWORK_CRESCENT)
 
@@ -42,6 +42,9 @@ var/global/list/engineering_networks = list(
 
 /obj/machinery/camera/network/civilian
 	network = list(NETWORK_CIVILIAN)
+
+/obj/machinery/camera/network/circuits
+	network = list(NETWORK_CIRCUITS)
 
 /*
 /obj/machinery/camera/network/civilian_east
@@ -99,6 +102,7 @@ var/global/list/engineering_networks = list(
 /obj/machinery/camera/network/thunder
 	network = list(NETWORK_THUNDER)
 	invuln = 1
+	always_visible = TRUE
 
 // EMP
 
@@ -153,24 +157,30 @@ var/global/list/engineering_networks = list(
 
 // AUTONAME
 /obj/machinery/camera/autoname
-	var/number = 0 //camera number in area
+	var/static/list/by_area
 
-//This camera type automatically sets it's name to whatever the area that it's in is called.
-/obj/machinery/camera/autoname/New()
-	..()
-	spawn(10)
-		number = 1
-		var/area/A = get_area(src)
-		if(A)
-			for(var/obj/machinery/camera/autoname/C in machines)
-				if(C == src) continue
-				var/area/CA = get_area(C)
-				if(CA.type == A.type)
-					if(C.number)
-						number = max(number, C.number+1)
-			c_tag = "[A.name] #[number]"
-		invalidateCameraCache()
-
+/obj/machinery/camera/autoname/Initialize()
+	. = ..()
+	var/area/A = get_area(src)
+	if(!A)
+		return .
+	if(!by_area)
+		by_area = list()
+	if(!by_area[A.name])
+		by_area[A.name] = list()
+	var/list/my_area = by_area[A.name]
+	my_area += src
+	var/number = my_area.len
+	
+	c_tag = "[A.name] #[number]"
+	
+/obj/machinery/camera/autoname/Destroy()
+	var/area/A = get_area(src)
+	if(!A || !by_area || !by_area[A.name])
+		return ..()
+	var/list/my_area = by_area[A.name]
+	my_area -= src
+	return ..()
 
 // CHECKS
 
@@ -201,9 +211,12 @@ var/global/list/engineering_networks = list(
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeMotion()
+	if(!isturf(loc))
+		return //nooooo
 	assembly.upgrades.Add(new /obj/item/device/assembly/prox_sensor(assembly))
 	setPowerUsage()
 	START_MACHINE_PROCESSING(src)
+	sense_proximity(callback = .HasProximity)
 	update_coverage()
 
 /obj/machinery/camera/proc/setPowerUsage()
@@ -212,4 +225,4 @@ var/global/list/engineering_networks = list(
 		mult++
 	if (isMotion())
 		mult++
-	active_power_usage = mult*initial(active_power_usage)
+	update_active_power_usage(mult * initial(active_power_usage))

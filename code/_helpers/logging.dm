@@ -1,37 +1,29 @@
 //print an error message to world.log
 
-// Fall back to using old format if we are not using rust-g
-#ifdef RUST_G
-	#define WRITE_LOG(log, text) call(RUST_G, "log_write")(log, text)
-#else
-	#define WRITE_LOG(log, text) log << "\[[time_stamp()]][text]"
-#endif
+//This is an external call, "true" and "false" are how rust parses out booleans
+#define WRITE_LOG(log, text) rustg_log_write(log, text, "true")
+#define WRITE_LOG_NO_FORMAT(log, text) rustg_log_write(log, text, "false")
 
 /* For logging round startup. */
 /proc/start_log(log)
-	#ifndef RUST_G
-	log = file(log)
-	#endif
 	WRITE_LOG(log, "START: Starting up [log_path].")
 	return log
 
 /* Close open log handles. This should be called as late as possible, and no logging should hapen after. */
 /proc/shutdown_logging()
-	#ifdef RUST_G
-	call(RUST_G, "log_close_all")()
-	#endif
+	rustg_log_close_all()
 
 /proc/error(msg)
-	world.log << "## ERROR: [msg]"
+	to_world_log("## ERROR: [msg]")
 
 #define WARNING(MSG) warning("[MSG] in [__FILE__] at line [__LINE__] src: [src] usr: [usr].")
 //print a warning message to world.log
 /proc/warning(msg)
-	world.log << "## WARNING: [msg]"
+	to_world_log("## WARNING: [msg]")
 
 //print a testing-mode debug message to world.log
 /proc/testing(msg)
-	world.log << "## TESTING: [msg]"
+	to_world_log("## TESTING: [msg]")
 
 /proc/log_admin(text)
 	admin_log.Add(text)
@@ -47,9 +39,9 @@
 	if (config.log_debug)
 		WRITE_LOG(debug_log, "DEBUG: [text]")
 
-	for(var/client/C in admins)
+	for(var/client/C in GLOB.admins)
 		if(C.is_preference_enabled(/datum/client_preference/debug/show_debug_logs))
-			C << "DEBUG: [text]"
+			to_chat(C, "<span class='filter_debuglog'>DEBUG: [text]</span>")
 
 /proc/log_game(text)
 	if (config.log_game)
@@ -61,8 +53,8 @@
 
 /proc/log_access_in(client/new_client)
 	if (config.log_access)
-		var/message = "[key_name(new_client)] - IP:[new_client.address] - CID:[new_client.computer_id] - BYOND v[new_client.byond_version]"			
-		WRITE_LOG(diary, "ACCESS IN: [message]")
+		var/message = "[key_name(new_client)] - IP:[new_client.address] - CID:[new_client.computer_id] - BYOND v[new_client.byond_version]"
+		WRITE_LOG(diary, "ACCESS IN: [message]") //VOREStation Edit
 
 /proc/log_access_out(mob/last_mob)
 	if (config.log_access)
@@ -73,25 +65,45 @@
 	if (config.log_say)
 		WRITE_LOG(diary, "SAY: [speaker.simple_info_line()]: [html_decode(text)]")
 
+	//Log the message to in-game dialogue logs, as well.
+	if(speaker.client)
+		speaker.dialogue_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>SAY:</u> - <span style=\"color:#32cd32\">[text]</span>"
+		GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>SAY:</u> - <span style=\"color:#32cd32\">[text]</span>"
+
 /proc/log_ooc(text, client/user)
 	if (config.log_ooc)
 		WRITE_LOG(diary, "OOC: [user.simple_info_line()]: [html_decode(text)]")
+
+	GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[user]</b>) <u>OOC:</u> - <span style=\"color:blue\"><b>[text]</b></span>"
 
 /proc/log_aooc(text, client/user)
 	if (config.log_ooc)
 		WRITE_LOG(diary, "AOOC: [user.simple_info_line()]: [html_decode(text)]")
 
+	GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[user]</b>) <u>AOOC:</u> - <span style=\"color:red\"><b>[text]</b></span>"
+
 /proc/log_looc(text, client/user)
 	if (config.log_ooc)
 		WRITE_LOG(diary, "LOOC: [user.simple_info_line()]: [html_decode(text)]")
+
+	GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[user]</b>) <u>LOOC:</u> - <span style=\"color:orange\"><b>[text]</b></span>"
 
 /proc/log_whisper(text, mob/speaker)
 	if (config.log_whisper)
 		WRITE_LOG(diary, "WHISPER: [speaker.simple_info_line()]: [html_decode(text)]")
 
+	if(speaker.client)
+		speaker.dialogue_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>SAY:</u> - <span style=\"color:gray\"><i>[text]</i></span>"
+		GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>SAY:</u> - <span style=\"color:gray\"><i>[text]</i></span>"
+
+
 /proc/log_emote(text, mob/speaker)
 	if (config.log_emote)
 		WRITE_LOG(diary, "EMOTE: [speaker.simple_info_line()]: [html_decode(text)]")
+
+	if(speaker.client)
+		speaker.dialogue_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>EMOTE:</u> - <span style=\"color:#CCBADC\">[text]</span>"
+		GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>EMOTE:</u> - <span style=\"color:#CCBADC\">[text]</span>"
 
 /proc/log_attack(attacker, defender, message)
 	if (config.log_attack)
@@ -113,6 +125,10 @@
 	if (config.log_say)
 		WRITE_LOG(diary, "DEADCHAT: [speaker.simple_info_line()]: [html_decode(text)]")
 
+	speaker.dialogue_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>DEADSAY:</u> - <span style=\"color:green\">[text]</span>"
+	GLOB.round_text_log += "<font size=1><span style=\"color:#7e668c\"><b>([time_stamp()])</b> (<b>[src]/[speaker.client]</b>) <u>DEADSAY:</u> - [text]</span></font>"
+
+
 /proc/log_ghostemote(text, mob/speaker)
 	if (config.log_emote)
 		WRITE_LOG(diary, "DEADEMOTE: [speaker.simple_info_line()]: [html_decode(text)]")
@@ -125,13 +141,17 @@
 	if (config.log_pda)
 		WRITE_LOG(diary, "PDA: [speaker.simple_info_line()]: [html_decode(text)]")
 
+	speaker.dialogue_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>MSG:</u> - <span style=\"color:[COLOR_GREEN]\">[text]</span>"
+	GLOB.round_text_log += "<b>([time_stamp()])</b> (<b>[speaker]/[speaker.client]</b>) <u>MSG:</u> - <span style=\"color:[COLOR_GREEN]\">[text]</span>"
+
+
 /proc/log_to_dd(text)
-	world.log << text //this comes before the config check because it can't possibly runtime
+	to_world_log(text) //this comes before the config check because it can't possibly runtime
 	if(config.log_world_output)
 		WRITE_LOG(diary, "DD_OUTPUT: [text]")
 
 /proc/log_error(text)
-	world.log << text
+	to_world_log(text)
 	WRITE_LOG(error_log, "RUNTIME: [text]")
 
 /proc/log_misc(text)
@@ -146,7 +166,23 @@
 	WRITE_LOG(href_logfile, "HREF: [text]")
 
 /proc/log_unit_test(text)
-	world.log << "## UNIT_TEST: [text]"
+	to_world_log("## UNIT_TEST: [text]")
+
+/proc/log_tgui(user_or_client, text)
+	var/entry = ""
+	if(!user_or_client)
+		entry += "no user"
+	else if(istype(user_or_client, /mob))
+		var/mob/user = user_or_client
+		entry += "[user.ckey] (as [user])"
+	else if(istype(user_or_client, /client))
+		var/client/client = user_or_client
+		entry += "[client.ckey]"
+	entry += ":\n[text]"
+	WRITE_LOG(diary, entry)
+
+/proc/log_asset(text)
+	WRITE_LOG(diary, "ASSET: [text]")
 
 /proc/report_progress(var/progress_message)
 	admin_notice("<span class='boldannounce'>[progress_message]</span>", R_DEBUG)
@@ -222,7 +258,7 @@
 
 			if(include_link && is_special_character(M) && highlight_special_characters)
 				name = "<font color='#FFA500'>[name]</font>" //Orange
-		
+
 		. += "/([name])"
 
 	return .
@@ -231,20 +267,28 @@
 	return key_name(whom, 1, include_name)
 
 // Helper procs for building detailed log lines
+//
+// These procs must not fail under ANY CIRCUMSTANCES!
+//
+
 /datum/proc/log_info_line()
 	return "[src] ([type])"
 
 /atom/log_info_line()
+	. = ..()
 	var/turf/t = get_turf(src)
 	if(istype(t))
-		return "([t]) ([t.x],[t.y],[t.z]) ([t.type])"
+		return "[.] @ [t.log_info_line()]"
 	else if(loc)
-		return "([loc]) (0,0,0) ([loc.type])"
+		return "[.] @ ([loc]) (0,0,0) ([loc.type])"
 	else
-		return "(NULL) (0,0,0) (NULL)"
+		return "[.] @ (NULL) (0,0,0) (NULL)"
+
+/turf/log_info_line()
+	return "([src]) ([x],[y],[z]) ([type])"
 
 /mob/log_info_line()
-	return "[..()] ([ckey])"
+	return "[..()] (ckey=[ckey])"
 
 /proc/log_info_line(var/datum/d)
 	if(!d)

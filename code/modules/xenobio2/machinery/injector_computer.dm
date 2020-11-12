@@ -11,7 +11,7 @@
 	icon_keyboard = "med_key"
 	icon_screen = "dna"
 	light_color = "#315ab4"
-	use_power = 1
+	use_power = USE_POWER_IDLE
 	idle_power_usage = 250
 	active_power_usage = 500
 	circuit = /obj/item/weapon/circuitboard/xenobio2computer
@@ -38,9 +38,9 @@
 				var/obj/machinery/xenobio2/manualinjector/I = P.connectable
 				injector = I
 				I.computer = src
-				user << "<span class='warning'> You link the [src] to the [P.connectable]!</span>"
+				to_chat(user, "<span class='warning'> You link the [src] to the [P.connectable]!</span>")
 		else
-			user << "<span class='warning'> You store the [src] in the [P]'s buffer!</span>"
+			to_chat(user, "<span class='warning'> You store the [src] in the [P]'s buffer!</span>")
 			P.connectable = src
 		return
 
@@ -59,7 +59,7 @@
 	if(injector.occupant)
 		data["occupied"] = 1
 	if(isxeno(injector.occupant))
-		var/mob/living/simple_animal/xeno/X = injector.occupant
+		var/mob/living/simple_mob/xeno/X = injector.occupant
 		data["compatible"] = 1
 		data["instability"] = 100 * (X.mut_level / X.mut_max)
 	else

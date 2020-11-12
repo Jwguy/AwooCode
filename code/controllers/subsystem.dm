@@ -6,6 +6,7 @@
 	var/priority = FIRE_PRIORITY_DEFAULT	//When mutiple subsystems need to run in the same tick, higher priority subsystems will run first and be given a higher share of the tick before MC_TICK_CHECK triggers a sleep
 
 	var/flags = 0			//see MC.dm in __DEFINES Most flags must be set on world start to take full effect. (You can also restart the mc to force them to process again)
+	var/subsystem_initialized = FALSE	//set to TRUE after it has been initialized, will obviously never be set if the subsystem doesn't initialize
 	var/runlevels = RUNLEVELS_DEFAULT	//points of the game at which the SS can fire
 
 	//set to 0 to prevent fire() calls, mostly for admin use or subsystems that may be resumed later
@@ -154,6 +155,7 @@
 
 //used to initialize the subsystem AFTER the map has loaded
 /datum/controller/subsystem/Initialize(start_timeofday)
+	subsystem_initialized = TRUE
 	var/time = (REALTIMEOFDAY - start_timeofday) / 10
 	var/msg = "Initialized [name] subsystem within [time] second[time == 1 ? "" : "s"]!"
 	to_chat(world, "<span class='boldannounce'>[msg]</span>")
@@ -166,11 +168,12 @@
 		statclick = new/obj/effect/statclick/debug(null, "Initializing...", src)
 
 
-
-	if(can_fire && !(SS_NO_FIRE & flags))
-		msg = "[round(cost,1)]ms|[round(tick_usage,1)]%([round(tick_overrun,1)]%)|[round(ticks,0.1)]\t[msg]"
-	else
+	if(SS_NO_FIRE & flags)
+		msg = "NO FIRE\t[msg]"
+	else if(can_fire <= 0)
 		msg = "OFFLINE\t[msg]"
+	else
+		msg = "[round(cost,1)]ms|[round(tick_usage,1)]%([round(tick_overrun,1)]%)|[round(ticks,0.1)]\t[msg]"
 
 	var/title = name
 	if (can_fire)
@@ -200,3 +203,15 @@
 //usually called via datum/controller/subsystem/New() when replacing a subsystem (i.e. due to a recurring crash)
 //should attempt to salvage what it can from the old instance of subsystem
 /datum/controller/subsystem/Recover()
+
+// Suspends this subsystem from being queued for running.  If already in the queue, sleeps until idle. Returns FALSE if the subsystem was already suspended.
+/datum/controller/subsystem/proc/suspend()
+	. = (can_fire > 0) // Return true if we were previously runnable, false if previously suspended.
+	can_fire = FALSE
+	// Safely sleep in a loop until the subsystem is idle, (or its been un-suspended somehow)
+	while(can_fire <= 0 && state != SS_IDLE)
+		stoplag() // Safely sleep in a loop until 
+
+// Wakes a suspended subsystem.
+/datum/controller/subsystem/proc/wake()
+	can_fire = TRUE

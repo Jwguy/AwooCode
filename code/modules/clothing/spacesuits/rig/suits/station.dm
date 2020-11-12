@@ -35,8 +35,7 @@
 		/obj/item/device/flashlight,
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
-		/obj/item/weapon/storage/briefcase,
-		/obj/item/weapon/storage/secure/briefcase
+		/obj/item/weapon/storage,
 		)
 
 	req_access = list()
@@ -74,6 +73,8 @@
 	offline_vision_restriction = 2
 	emp_protection = -20
 	siemens_coefficient= 0.75
+	rigsuit_max_pressure = 15 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
+	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/industrial
 
@@ -81,7 +82,7 @@
 		/obj/item/device/flashlight,
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
-		/obj/item/weapon/storage/bag/ore,
+		/obj/item/weapon/storage,
 		/obj/item/device/t_scanner,
 		/obj/item/weapon/pickaxe,
 		/obj/item/weapon/rcd
@@ -119,7 +120,7 @@
 		/obj/item/device/flashlight,
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
-		/obj/item/weapon/storage/briefcase/inflatable,
+		/obj/item/weapon/storage,
 		/obj/item/device/t_scanner,
 		/obj/item/weapon/rcd
 		)
@@ -155,15 +156,18 @@
 	offline_slowdown = 0
 	offline_vision_restriction = 0
 	siemens_coefficient= 0.75
+	rigsuit_max_pressure = 20 * ONE_ATMOSPHERE			  // Max pressure the rig protects against when sealed
+	rigsuit_min_pressure = 0							  // Min pressure the rig protects against when sealed
 
 	helm_type = /obj/item/clothing/head/helmet/space/rig/ce
 	glove_type = /obj/item/clothing/gloves/gauntlets/rig/ce
+	boot_type = /obj/item/clothing/shoes/magboots/rig/ce //VOREStation Add
 
 	allowed = list(
 		/obj/item/device/flashlight,
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
-		/obj/item/weapon/storage/briefcase/inflatable,
+		/obj/item/weapon/storage,
 		/obj/item/device/t_scanner,
 		/obj/item/weapon/rcd
 		)
@@ -207,7 +211,7 @@
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
 		/obj/item/stack/flag,
-		/obj/item/weapon/storage/excavation,
+		/obj/item/weapon/storage,
 		/obj/item/weapon/pickaxe,
 		/obj/item/device/healthanalyzer,
 		/obj/item/device/measuring_tape,
@@ -217,8 +221,8 @@
 		/obj/item/device/gps,
 		/obj/item/device/beacon_locator,
 		/obj/item/device/radio/beacon,
-		/obj/item/weapon/pickaxe/hand,
-		/obj/item/weapon/storage/bag/fossils)
+		/obj/item/weapon/pickaxe/hand
+		)
 
 	req_access = list()
 	req_one_access = list()
@@ -251,7 +255,7 @@
 		/obj/item/device/flashlight,
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
-		/obj/item/weapon/storage/firstaid,
+		/obj/item/weapon/storage,
 		/obj/item/device/healthanalyzer,
 		/obj/item/stack/medical,
 		/obj/item/roller
@@ -291,7 +295,8 @@
 		/obj/item/device/flashlight,
 		/obj/item/weapon/tank,
 		/obj/item/device/suit_cooling_unit,
-		/obj/item/weapon/melee/baton
+		/obj/item/weapon/melee/baton,
+		/obj/item/weapon/storage
 		)
 
 	req_access = list()

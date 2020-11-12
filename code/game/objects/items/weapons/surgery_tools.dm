@@ -13,7 +13,8 @@
 	desc = "This shouldn't be here, ahelp it."
 	icon = 'icons/obj/surgery.dmi'
 	w_class = ITEMSIZE_SMALL
-	flags = CONDUCT
+	drop_sound = 'sound/items/drop/weldingtool.ogg'
+	pickup_sound = 'sound/items/pickup/weldingtool.ogg'
 	var/helpforce = 0	//For help intent things
 
 /obj/item/weapon/surgical/attack(mob/M, mob/user)
@@ -31,6 +32,7 @@
 	icon_state = "retractor"
 	matter = list(DEFAULT_WALL_MATERIAL = 10000, "glass" = 5000)
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
+	drop_sound = 'sound/items/drop/scrap.ogg'
 
 /*
  * Hemostat
@@ -42,6 +44,7 @@
 	matter = list(DEFAULT_WALL_MATERIAL = 5000, "glass" = 2500)
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("attacked", "pinched")
+	drop_sound = 'sound/items/drop/scrap.ogg'
 
 /*
  * Cautery
@@ -53,6 +56,7 @@
 	matter = list(DEFAULT_WALL_MATERIAL = 5000, "glass" = 2500)
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("burnt")
+	drop_sound = 'sound/items/drop/scrap.ogg'
 
 /*
  * Surgical Drill
@@ -67,11 +71,12 @@
 	w_class = ITEMSIZE_NORMAL
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	attack_verb = list("drilled")
+	drop_sound = 'sound/items/drop/accessory.ogg'
 
 	suicide_act(mob/user)
 		var/datum/gender/TU = gender_datums[user.get_visible_gender()]
-		viewers(user) << pick("<span class='danger'>\The [user] is pressing \the [src] to [TU.his] temple and activating it! It looks like [TU.hes] trying to commit suicide.</span>",
-		                       "<span class='danger'>\The [user] is pressing \the [src] to [TU.his] chest and activating it! It looks like [TU.hes] trying to commit suicide.</span>")
+		to_chat(viewers(user),pick("<span class='danger'>\The [user] is pressing \the [src] to [TU.his] temple and activating it! It looks like [TU.hes] trying to commit suicide.</span>",
+		                       "<span class='danger'>\The [user] is pressing \the [src] to [TU.his] chest and activating it! It looks like [TU.hes] trying to commit suicide.</span>"))
 		return (BRUTELOSS)
 
 /*
@@ -92,12 +97,13 @@
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 1)
 	matter = list(DEFAULT_WALL_MATERIAL = 10000, "glass" = 5000)
 	attack_verb = list("attacked", "slashed", "stabbed", "sliced", "torn", "ripped", "diced", "cut")
-	
+	drop_sound = 'sound/items/drop/knife.ogg'
+
 	suicide_act(mob/user)
 		var/datum/gender/TU = gender_datums[user.get_visible_gender()]
-		viewers(user) << pick("<span class='danger'>\The [user] is slitting [TU.his] wrists with the [src.name]! It looks like [TU.hes] trying to commit suicide.</span>", \
+		to_chat(viewers(user),pick("<span class='danger'>\The [user] is slitting [TU.his] wrists with the [src.name]! It looks like [TU.hes] trying to commit suicide.</span>", \
 		                      "<span class='danger'>\The [user] is slitting [TU.his] throat with the [src.name]! It looks like [TU.hes] trying to commit suicide.</span>", \
-		                      "<span class='danger'>\The [user] is slitting [TU.his] stomach open with the [src.name]! It looks like [TU.hes] trying to commit seppuku.</span>")
+		                      "<span class='danger'>\The [user] is slitting [TU.his] stomach open with the [src.name]! It looks like [TU.hes] trying to commit seppuku.</span>"))
 		return (BRUTELOSS)
 
 /*
@@ -129,6 +135,15 @@
 	icon_state = "scalpel_manager_on"
 	force = 7.5
 
+/obj/item/weapon/surgical/scalpel/ripper
+	name = "organ pincers"
+	desc = "A horrifying bladed tool with a large metal spike in its center. The tool is used for rapidly removing organs from hopefully willing patients."
+	icon_state = "organ_ripper"
+	item_state = "bone_setter"
+	force = 15.0
+	toolspeed = 0.75
+	origin_tech = list(TECH_MATERIAL = 5, TECH_BIO = 3, TECH_ILLEGAL = 2)
+
 /*
  * Circular Saw
  */
@@ -137,6 +152,7 @@
 	desc = "For heavy duty cutting."
 	icon_state = "saw3"
 	hitsound = 'sound/weapons/circsawhit.ogg'
+	drop_sound = 'sound/items/drop/accessory.ogg'
 	force = 15.0
 	w_class = ITEMSIZE_NORMAL
 	throwforce = 9.0
@@ -148,6 +164,19 @@
 	sharp = 1
 	edge = 1
 
+/obj/item/weapon/surgical/circular_saw/manager
+	name = "energetic bone diverter"
+	desc = "For heavy duty cutting (and sealing), with science!"
+	icon_state = "adv_saw"
+	item_state = "saw3"
+	hitsound = 'sound/weapons/emitter2.ogg'
+	damtype = SEARING
+	w_class = ITEMSIZE_LARGE
+	origin_tech = list(TECH_BIO = 4, TECH_MATERIAL = 6, TECH_MAGNET = 6)
+	matter = list(DEFAULT_WALL_MATERIAL = 12500)
+	attack_verb = list("attacked", "slashed", "seared", "cut")
+	toolspeed = 0.75
+
 //misc, formerly from code/defines/weapons.dm
 /obj/item/weapon/surgical/bonegel
 	name = "bone gel"
@@ -155,6 +184,7 @@
 	icon_state = "bone-gel"
 	force = 0
 	throwforce = 1.0
+	drop_sound = 'sound/items/drop/bottle.ogg'
 
 /obj/item/weapon/surgical/FixOVein
 	name = "FixOVein"
@@ -164,6 +194,7 @@
 	throwforce = 1.0
 	origin_tech = list(TECH_MATERIAL = 1, TECH_BIO = 3)
 	var/usage_amount = 10
+	drop_sound = 'sound/items/drop/accessory.ogg'
 
 /obj/item/weapon/surgical/bonesetter
 	name = "bone setter"
@@ -174,6 +205,7 @@
 	throw_speed = 3
 	throw_range = 5
 	attack_verb = list("attacked", "hit", "bludgeoned")
+	drop_sound = 'sound/items/drop/scrap.ogg'
 
 /obj/item/weapon/surgical/bone_clamp
 	name = "bone clamp"

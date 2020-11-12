@@ -4,7 +4,7 @@
 /obj/machinery/oxygen_pump
 	name = "emergency oxygen pump"
 	icon = 'icons/obj/walllocker.dmi'
-	desc = "A wall mounted oxygen pump with a retractable face mask that you can pull over your face in case of emergencies."
+	desc = "A wall mounted oxygen pump with a retractable mask that you can pull over your face in case of emergencies."
 	icon_state = "oxygen_tank"
 
 	anchored = TRUE
@@ -22,7 +22,7 @@
 	idle_power_usage = 10
 	active_power_usage = 120 // No idea what the realistic amount would be.
 
-/obj/machinery/oxygen_pump/initialize()
+/obj/machinery/oxygen_pump/Initialize()
 	. = ..()
 	tank = new spawn_type (src)
 	contained = new mask_type (src)
@@ -41,8 +41,11 @@
 	return ..()
 
 /obj/machinery/oxygen_pump/MouseDrop(var/mob/living/carbon/human/target, src_location, over_location)
-	..()
-	if(istype(target) && CanMouseDrop(target))
+	var/mob/living/user = usr
+	if(!istype(user) || !istype(target))
+		return ..()
+
+	if(CanMouseDrop(target, user))
 		if(!can_apply_to_target(target, usr)) // There is no point in attempting to apply a mask if it's impossible.
 			return
 		usr.visible_message("\The [usr] begins placing \the [contained] onto [target].")
@@ -73,10 +76,10 @@
 		if(breather.internals)
 			breather.internals.icon_state = "internal0"
 		breather = null
-		use_power = 1
+		update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/oxygen_pump/attack_ai(mob/user as mob)
-	ui_interact(user)
+	tgui_interact(user)
 
 /obj/machinery/oxygen_pump/proc/attach_mask(var/mob/living/carbon/C)
 	if(C && istype(C))
@@ -90,7 +93,7 @@
 			breather.internal = tank
 			if(breather.internals)
 				breather.internals.icon_state = "internal1"
-		use_power = 2
+		update_use_power(USE_POWER_ACTIVE)
 
 /obj/machinery/oxygen_pump/proc/can_apply_to_target(var/mob/living/carbon/human/target, mob/user as mob)
 	if(!user)
@@ -148,9 +151,9 @@
 /obj/machinery/oxygen_pump/examine(var/mob/user)
 	. = ..()
 	if(tank)
-		to_chat(user, "The meter shows [round(tank.air_contents.return_pressure())] kPa.")
+		. += "The meter shows [round(tank.air_contents.return_pressure())] kPa."
 	else
-		to_chat(user, "<span class='warning'>It is missing a tank!</span>")
+		. += "<span class='warning'>It is missing a tank!</span>"
 
 
 /obj/machinery/oxygen_pump/process()
@@ -162,7 +165,7 @@
 			contained.forceMove(src)
 			src.visible_message("<span class='notice'>\The [contained] rapidly retracts back into \the [src]!</span>")
 			breather = null
-			use_power = 1
+			update_use_power(USE_POWER_IDLE)
 		else if(!breather.internal && tank)
 			breather.internal = tank
 			if(breather.internals)
@@ -173,66 +176,153 @@
 	set src in oview(1)
 	set category = "Object"
 	set name = "Show Tank Settings"
-	ui_interact(usr)
+	tgui_interact(usr)
 
-//GUI Tank Setup
-/obj/machinery/oxygen_pump/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	var/data[0]
+/obj/machinery/oxygen_pump/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
 	if(!tank)
-		to_chat(usr, "<span class='warning'>It is missing a tank!</span>")
-		data["tankPressure"] = 0
-		data["releasePressure"] = 0
-		data["defaultReleasePressure"] = 0
-		data["maxReleasePressure"] = 0
-		data["maskConnected"] = 0
-		data["tankInstalled"] = 0
-	// this is the data which will be sent to the ui
+		to_chat(user, "<span class='warning'>[src] is missing a tank.</span>")
+		if(ui)
+			ui.close()
+		return
+
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Tank", name)
+		ui.open()
+
+/obj/machinery/oxygen_pump/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = ..()
+
+	data["showToggle"] = FALSE
+	data["maskConnected"] = !!breather
+
+	data["tankPressure"] = 0
+	data["releasePressure"] = 0
+	data["defaultReleasePressure"] = 0
+	data["minReleasePressure"] = 0
+	data["releasePressure"] = round(tank.distribute_pressure ? tank.distribute_pressure : 0)
+	data["maxReleasePressure"] = round(TANK_MAX_RELEASE_PRESSURE)
+
 	if(tank)
 		data["tankPressure"] = round(tank.air_contents.return_pressure() ? tank.air_contents.return_pressure() : 0)
-		data["releasePressure"] = round(tank.distribute_pressure ? tank.distribute_pressure : 0)
 		data["defaultReleasePressure"] = round(TANK_DEFAULT_RELEASE_PRESSURE)
-		data["maxReleasePressure"] = round(TANK_MAX_RELEASE_PRESSURE)
-		data["maskConnected"] = 0
-		data["tankInstalled"] = 1
 
-	if(!breather)
-		data["maskConnected"] = 0
-	if(breather)
-		data["maskConnected"] = 1
+	return data
 
-
-	// update the ui if it exists, returns null if no ui is passed/found
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-	if (!ui)
-		// the ui does not exist, so we'll create a new() one
-		// for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
-		ui = new(user, src, ui_key, "Oxygen_pump.tmpl", "Tank", 500, 300)
-		// when the ui is first opened this is the data it will use
-		ui.set_initial_data(data)
-		// open the new ui window
-		ui.open()
-		// auto update every Master Controller tick
-		ui.set_auto_update(1)
-
-/obj/machinery/oxygen_pump/Topic(href, href_list)
+/obj/machinery/oxygen_pump/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
-		return 1
+		return TRUE
 
-	if (href_list["dist_p"])
-		if (href_list["dist_p"] == "reset")
-			tank.distribute_pressure = TANK_DEFAULT_RELEASE_PRESSURE
-		else if (href_list["dist_p"] == "max")
-			tank.distribute_pressure = TANK_MAX_RELEASE_PRESSURE
-		else
-			var/cp = text2num(href_list["dist_p"])
-			tank.distribute_pressure += cp
-		tank.distribute_pressure = min(max(round(tank.distribute_pressure), 0), TANK_MAX_RELEASE_PRESSURE)
-		return 1
+	switch(action)
+		if("pressure")
+			var/pressure = params["pressure"]
+			if(pressure == "reset")
+				pressure = TANK_DEFAULT_RELEASE_PRESSURE
+				. = TRUE
+			else if(pressure == "min")
+				pressure = 0
+				. = TRUE
+			else if(pressure == "max")
+				pressure = TANK_MAX_RELEASE_PRESSURE
+				. = TRUE
+			else if(text2num(pressure) != null)
+				pressure = text2num(pressure)
+				. = TRUE
+			if(.)
+				tank.distribute_pressure = clamp(round(pressure), 0, TANK_MAX_RELEASE_PRESSURE)
 
 /obj/machinery/oxygen_pump/anesthetic
 	name = "anesthetic pump"
+	desc = "A wall mounted anesthetic pump with a retractable mask that someone can pull over your face to knock you out."
 	spawn_type = /obj/item/weapon/tank/anesthetic
 	icon_state = "anesthetic_tank"
 	icon_state_closed = "anesthetic_tank"
 	icon_state_open = "anesthetic_tank_open"
 	mask_type = /obj/item/clothing/mask/breath/anesthetic
+
+/obj/machinery/oxygen_pump/mobile
+	name = "portable oxygen pump"
+	icon = 'icons/obj/atmos.dmi'
+	desc = "A portable oxygen pump with a retractable mask that you can pull over your face in case of emergencies."
+	icon_state = "medpump"
+	icon_state_open = "medpump_open"
+	icon_state_closed = "medpump"
+
+	anchored = FALSE
+	density = TRUE
+
+	mask_type = /obj/item/clothing/mask/gas/clear
+
+	var/last_area = null
+
+/obj/machinery/oxygen_pump/mobile/process()
+	..()
+
+	var/turf/T = get_turf(src)
+
+	if(!last_area && T)
+		last_area = T.loc
+
+	if(last_area != T.loc)
+		power_change()
+		last_area = T.loc
+
+/obj/machinery/oxygen_pump/mobile/anesthetic
+	name = "portable anesthetic pump"
+	desc = "A portable anesthetic pump with a retractable mask that someone can pull over your face to knock you out."
+	spawn_type = /obj/item/weapon/tank/anesthetic
+	icon_state = "medpump_n2o"
+	icon_state_closed = "medpump_n2o"
+	icon_state_open = "medpump_n2o_open"
+	mask_type = /obj/item/clothing/mask/breath/anesthetic
+
+/obj/machinery/oxygen_pump/mobile/stabilizer
+	name = "portable patient stabilizer"
+	desc = "A portable oxygen pump with a retractable mask used for stabilizing patients in the field."
+
+/obj/machinery/oxygen_pump/mobile/stabilizer/process()
+	if(breather)
+		if(!can_apply_to_target(breather))
+			if(tank)
+				tank.forceMove(src)
+			breather.remove_from_mob(contained)
+			contained.forceMove(src)
+			src.visible_message("<span class='notice'>\The [contained] rapidly retracts back into \the [src]!</span>")
+			breather = null
+			update_use_power(USE_POWER_IDLE)
+		else if(!breather.internal && tank)
+			breather.internal = tank
+			if(breather.internals)
+				breather.internals.icon_state = "internal0"
+
+		if(breather)	// Safety.
+			if(ishuman(breather) && !(breather.isSynthetic()))
+				var/mob/living/carbon/human/H = breather
+
+				if(H.internal_organs_by_name[O_LUNGS])
+					var/obj/item/organ/internal/L = H.internal_organs_by_name[O_LUNGS]
+					if(L)
+						if(!(L.status & ORGAN_DEAD))
+							H.adjustOxyLoss(-(rand(10,15)))
+
+							if(L.is_bruised() && prob(30))
+								L.take_damage(-1)
+							else
+								H.AdjustLosebreath(-(rand(1, 5)))
+						else
+							H.adjustOxyLoss(-(rand(1,8)))
+
+				if(H.stat == DEAD)
+					H.add_modifier(/datum/modifier/bloodpump_corpse, 6 SECONDS)
+
+				else
+					H.add_modifier(/datum/modifier/bloodpump, 6 SECONDS)
+
+	var/turf/T = get_turf(src)
+
+	if(!last_area && T)
+		last_area = T.loc
+
+	if(last_area != T.loc)
+		power_change()
+		last_area = T.loc

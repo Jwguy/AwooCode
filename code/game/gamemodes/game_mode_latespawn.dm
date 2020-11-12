@@ -13,7 +13,7 @@
 
 ///process()
 ///Called by the gameticker
-/datum/game_mode/proc/process()
+/datum/game_mode/process()
 	// Slow this down a bit so latejoiners have a chance of being antags.
 	process_count++
 	if(process_count >= 10)
@@ -34,7 +34,7 @@
 	if(emergency_shuttle.shuttle && (emergency_shuttle.shuttle.moving_status == SHUTTLE_WARMUP || emergency_shuttle.shuttle.moving_status == SHUTTLE_INTRANSIT))
 		return // Don't do anything if the shuttle's coming.
 
-	var/mills = round_duration_in_ticks
+	var/mills = round_duration_in_ds
 	var/mins = round((mills % 36000) / 600)
 	var/hours = round(mills / 36000)
 

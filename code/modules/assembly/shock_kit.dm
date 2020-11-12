@@ -6,7 +6,6 @@
 	var/obj/item/device/radio/electropack/part2 = null
 	var/status = 0
 	w_class = ITEMSIZE_HUGE
-	flags = CONDUCT
 
 /obj/item/assembly/shock_kit/Destroy()
 	qdel(part1)
@@ -14,7 +13,7 @@
 	..()
 	return
 
-/obj/item/assembly/shock_kit/attackby(obj/item/weapon/W as obj, mob/user as mob)
+/obj/item/assembly/shock_kit/attackby(var/obj/item/weapon/W, var/mob/user)
 	if(W.is_wrench() && !status)
 		var/turf/T = loc
 		if(ismob(T))

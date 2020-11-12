@@ -1,9 +1,13 @@
+
+
 /obj/item/clothing/gloves/yellow
 	desc = "These gloves will protect the wearer from electric shock."
 	name = "insulated gloves"
 	icon_state = "yellow"
 	siemens_coefficient = 0
 	permeability_coefficient = 0.05
+	drop_sound = 'sound/items/drop/rubber.ogg'
+	pickup_sound = 'sound/items/pickup/rubber.ogg'
 
 /obj/item/clothing/gloves/fyellow                             //Cheap Chinese Crap
 	desc = "These gloves are cheap copies of proper insulated gloves. No way this can end badly."
@@ -11,11 +15,13 @@
 	icon_state = "yellow"
 	siemens_coefficient = 1			//Set to a default of 1, gets overridden in initialize()
 	permeability_coefficient = 0.05
+	drop_sound = 'sound/items/drop/rubber.ogg'
+	pickup_sound = 'sound/items/pickup/rubber.ogg'
 
-/obj/item/clothing/gloves/fyellow/initialize()
+/obj/item/clothing/gloves/fyellow/Initialize()
 	. = ..()
 	//Picks a value between 0 and 1.25, in 5% increments // VOREStation edit
-	var/shock_pick = rand(0,25) // VOREStation Edit
+	var/shock_pick = rand(0,15) // VOREStation Edit
 	siemens_coefficient = shock_pick * 0.05
 
 /obj/item/clothing/gloves/black

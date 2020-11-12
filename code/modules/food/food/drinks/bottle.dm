@@ -14,9 +14,12 @@
 	var/rag_underlay = "rag"
 	on_reagent_change() return // To suppress price updating. Bottles have their own price tags.
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/New()
-	..()
-	if(isGlass) unacidable = 1
+/obj/item/weapon/reagent_containers/food/drinks/bottle/Initialize()
+	. = ..()
+	if(isGlass)
+		unacidable = 1
+		drop_sound = 'sound/items/drop/bottle.ogg'
+		pickup_sound = 'sound/items/pickup/bottle.ogg'
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/Destroy()
 	if(rag)
@@ -87,12 +90,12 @@
 	if(!choice)
 		return
 	if(!(choice.density && usr.Adjacent(choice)))
-		usr << "<span class='warning'>You must stay close to your target! You moved away from \the [choice]</span>"
+		to_chat(usr, "<span class='warning'>You must stay close to your target! You moved away from \the [choice]</span>")
 		return
 
 	usr.put_in_hands(src.smash(usr.loc, choice))
 	usr.visible_message("<span class='danger'>\The [usr] smashed \the [src] on \the [choice]!</span>")
-	usr << "<span class='danger'>You smash \the [src] on \the [choice]!</span>"
+	to_chat(usr, "<span class='danger'>You smash \the [src] on \the [choice]!</span>")
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/attackby(obj/item/W, mob/user)
 	if(!rag && istype(W, /obj/item/weapon/reagent_containers/glass/rag))
@@ -112,7 +115,7 @@
 /obj/item/weapon/reagent_containers/food/drinks/bottle/proc/insert_rag(obj/item/weapon/reagent_containers/glass/rag/R, mob/user)
 	if(!isGlass || rag) return
 	if(user.unEquip(R))
-		user << "<span class='notice'>You stuff [R] into [src].</span>"
+		to_chat(user, "<span class='notice'>You stuff [R] into [src].</span>")
 		rag = R
 		rag.forceMove(src)
 		flags &= ~OPENCONTAINER
@@ -178,13 +181,14 @@
 	throw_speed = 3
 	throw_range = 5
 	item_state = "beer"
+	flags = NOCONDUCT
 	attack_verb = list("stabbed", "slashed", "attacked")
 	sharp = 1
 	edge = 0
 	var/icon/broken_outline = icon('icons/obj/drinks.dmi', "broken")
 
 /obj/item/weapon/broken_bottle/attack(mob/living/carbon/M as mob, mob/living/carbon/user as mob)
-	playsound(loc, 'sound/weapons/bladeslice.ogg', 50, 1, -1)
+	playsound(src, 'sound/weapons/bladeslice.ogg', 50, 1, -1)
 	return ..()
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/gin
@@ -193,18 +197,18 @@
 	icon_state = "ginbottle"
 	center_of_mass = list("x"=16, "y"=4)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/gin/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/gin/Initialize()
+	. = ..()
 	reagents.add_reagent("gin", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/whiskey
 	name = "Uncle Git's Special Reserve"
-	desc = "A premium single-malt whiskey, gently matured inside the tunnels of a nuclear shelter."
+	desc = "A premium single-malt whiskey, gently matured in a highly classified location."
 	icon_state = "whiskeybottle"
 	center_of_mass = list("x"=16, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/whiskey/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/whiskey/Initialize()
+	. = ..()
 	reagents.add_reagent("whiskey", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/specialwhiskey
@@ -213,8 +217,8 @@
 	icon_state = "whiskeybottle2"
 	center_of_mass = list("x"=16, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/specialwhiskey/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/specialwhiskey/Initialize()
+	. = ..()
 	reagents.add_reagent("specialwhiskey", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/vodka
@@ -223,18 +227,18 @@
 	icon_state = "vodkabottle"
 	center_of_mass = list("x"=17, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/vodka/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/vodka/Initialize()
+	. = ..()
 	reagents.add_reagent("vodka", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/tequilla
 	name = "Caccavo Guaranteed Quality Tequilla"
 	desc = "Made from premium petroleum distillates, pure thalidomide and other fine quality ingredients!"
-	icon_state = "tequillabottle"
+	icon_state = "tequilabottle"
 	center_of_mass = list("x"=16, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/tequilla/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/tequilla/Initialize()
+	. = ..()
 	reagents.add_reagent("tequilla", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/bottleofnothing
@@ -243,18 +247,18 @@
 	icon_state = "bottleofnothing"
 	center_of_mass = list("x"=17, "y"=5)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/bottleofnothing/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/bottleofnothing/Initialize()
+	. = ..()
 	reagents.add_reagent("nothing", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/patron
 	name = "Wrapp Artiste Patron"
-	desc = "Silver laced tequilla, served in space night clubs across the galaxy."
+	desc = "Silver laced tequilla, served in night clubs across the galaxy."
 	icon_state = "patronbottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/patron/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/patron/Initialize()
+	. = ..()
 	reagents.add_reagent("patron", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/rum
@@ -263,8 +267,8 @@
 	icon_state = "rumbottle"
 	center_of_mass = list("x"=16, "y"=8)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/rum/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/rum/Initialize()
+	. = ..()
 	reagents.add_reagent("rum", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/holywater
@@ -273,8 +277,8 @@
 	icon_state = "holyflask"
 	center_of_mass = list("x"=17, "y"=10)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/holywater/Initialize()
+	. = ..()
 	reagents.add_reagent("holywater", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/vermouth
@@ -283,8 +287,8 @@
 	icon_state = "vermouthbottle"
 	center_of_mass = list("x"=17, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/vermouth/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/vermouth/Initialize()
+	. = ..()
 	reagents.add_reagent("vermouth", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/kahlua
@@ -293,8 +297,8 @@
 	icon_state = "kahluabottle"
 	center_of_mass = list("x"=17, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/kahlua/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/kahlua/Initialize()
+	. = ..()
 	reagents.add_reagent("kahlua", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/goldschlager
@@ -303,8 +307,8 @@
 	icon_state = "goldschlagerbottle"
 	center_of_mass = list("x"=15, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/goldschlager/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/goldschlager/Initialize()
+	. = ..()
 	reagents.add_reagent("goldschlager", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/cognac
@@ -313,8 +317,8 @@
 	icon_state = "cognacbottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/cognac/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/cognac/Initialize()
+	. = ..()
 	reagents.add_reagent("cognac", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/wine
@@ -323,8 +327,8 @@
 	icon_state = "winebottle"
 	center_of_mass = list("x"=16, "y"=4)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/wine/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/wine/Initialize()
+	. = ..()
 	reagents.add_reagent("wine", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe
@@ -333,8 +337,8 @@
 	icon_state = "absinthebottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/absinthe/Initialize()
+	. = ..()
 	reagents.add_reagent("absinthe", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/melonliquor
@@ -343,8 +347,8 @@
 	icon_state = "alco-green" //Placeholder.
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/melonliquor/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/melonliquor/Initialize()
+	. = ..()
 	reagents.add_reagent("melonliquor", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/bluecuracao
@@ -353,8 +357,8 @@
 	icon_state = "alco-blue" //Placeholder.
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/bluecuracao/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/bluecuracao/Initialize()
+	. = ..()
 	reagents.add_reagent("bluecuracao", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/grenadine
@@ -363,8 +367,8 @@
 	icon_state = "grenadinebottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/grenadine/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/grenadine/Initialize()
+	. = ..()
 	reagents.add_reagent("grenadine", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/cola
@@ -373,8 +377,8 @@
 	icon_state = "colabottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/cola/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/cola/Initialize()
+	. = ..()
 	reagents.add_reagent("cola", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/space_up
@@ -383,7 +387,7 @@
 	icon_state = "space-up_bottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/space_up/New()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/space_up/Initialize()
 	..()
 	reagents.add_reagent("space_up", 100)
 
@@ -393,7 +397,7 @@
 	icon_state = "space_mountain_wind_bottle"
 	center_of_mass = list("x"=16, "y"=6)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/space_mountain_wind/New()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/space_mountain_wind/Initialize()
 	..()
 	reagents.add_reagent("spacemountainwind", 100)
 
@@ -403,8 +407,8 @@
 	icon_state = "pwinebottle"
 	center_of_mass = list("x"=16, "y"=4)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/pwine/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/pwine/Initialize()
+	. = ..()
 	reagents.add_reagent("pwine", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/redeemersbrew
@@ -413,8 +417,8 @@
 	icon_state = "redeemersbrew"
 	center_of_mass = list("x"=16, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/redeemersbrew/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/redeemersbrew/Initialize()
+	. = ..()
 	reagents.add_reagent("unathiliquor", 100)
 
 //////////////////////////JUICES AND STUFF ///////////////////////
@@ -427,8 +431,8 @@
 	center_of_mass = list("x"=16, "y"=7)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/orangejuice/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/orangejuice/Initialize()
+	. = ..()
 	reagents.add_reagent("orangejuice", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/applejuice
@@ -439,8 +443,8 @@
 	center_of_mass = list("x"=16, "y"=7)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/applejuice/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/applejuice/Initialize()
+	. = ..()
 	reagents.add_reagent("applejuice", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/milk
@@ -451,8 +455,8 @@
 	center_of_mass = list("x"=16, "y"=9)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/milk/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/milk/Initialize()
+	. = ..()
 	reagents.add_reagent("milk", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/cream
@@ -463,8 +467,8 @@
 	center_of_mass = list("x"=16, "y"=8)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/cream/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/cream/Initialize()
+	. = ..()
 	reagents.add_reagent("cream", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/tomatojuice
@@ -475,8 +479,8 @@
 	center_of_mass = list("x"=16, "y"=8)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/tomatojuice/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/tomatojuice/Initialize()
+	. = ..()
 	reagents.add_reagent("tomatojuice", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/limejuice
@@ -487,8 +491,8 @@
 	center_of_mass = list("x"=16, "y"=8)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/limejuice/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/limejuice/Initialize()
+	. = ..()
 	reagents.add_reagent("limejuice", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/lemonjuice
@@ -499,8 +503,8 @@
 	center_of_mass = list("x"=16, "y"=8)
 	isGlass = 0
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/lemonjuice/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/lemonjuice/Initialize()
+	. = ..()
 	reagents.add_reagent("lemonjuice", 100)
 
 //Small bottles
@@ -511,14 +515,48 @@
 	rag_underlay = "rag_small"
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/small/beer
-	name = "space beer"
-	desc = "Contains only water, malt and hops."
+	name = "Spacer beer"
+	desc = "A remarkably unremarkable pale lager. Barley malt, hops and yeast."
+	description_fluff = "Identical to an earlier Earth-based variety of beer, Spacer beer was rebranded at the height of humanity's first extra-solar colonization boom in the 2130s and become the go-to cheap booze for those dreaming of a brighter future in the stars. Today, the beer is advertised as 'brewed in space, for space."
 	icon_state = "beer"
 	center_of_mass = list("x"=16, "y"=12)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/small/beer/New()
-	..()
-	reagents.add_reagent("beer", 30)
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/beer/Initialize()
+	. = ..()
+	reagents.add_reagent("beer", 50)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/beer/silverdragon
+	name = "Silver Dragon pilsner"
+	desc = "An earthy pale lager produced exclusively on Nisp, best served cold."
+	description_fluff = "Brewed using locally grown hops, with hints of local flora, Silver Dragon has a reputation as the beer of the frontier hunter - and those trying to look just as tough."
+	icon_state = "beer2"
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/beer/meteor
+	name = "Meteor beer"
+	desc = "A strong, premium beer with a hint of maize."
+	description_fluff = "Sold across human space, Meteor beer has won more awards than any single variety in history. It should be noted that Meteor's parent company Gilthari Exports, owns most alcohol awards agencies."
+	icon_state = "beerprem"
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/litebeer
+	name = "Lite-Speed Lite beer"
+	desc = "A reduced-alcohol, reduced-calorie beer for the drunk on a diet."
+	description_fluff = "Lite-Speed is Spacer Beer's light brand, and despite being widely considered inferior in every regard, it's still pretty cheap. The lower alcohol content also appeals to some Skrell, for whom full-strength beer is too strong."
+	icon_state = "beerlite"
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/litebeer/Initialize()
+	. = ..()
+	reagents.add_reagent("litebeer", 50)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/cider
+	name = "Crisp's Cider"
+	desc = "Fermented apples never tasted this good."
+	icon_state = "cider"
+	center_of_mass = list("x"=16, "y"=12)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/cider/Initialize()
+	. = ..()
+	reagents.add_reagent("cider", 50)
+
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/small/ale
 	name = "\improper Magm-Ale"
@@ -527,9 +565,19 @@
 	item_state = "beer"
 	center_of_mass = list("x"=16, "y"=10)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/small/ale/New()
-	..()
-	reagents.add_reagent("ale", 30)
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/ale/Initialize()
+	. = ..()
+	reagents.add_reagent("ale", 50)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper
+	name = "Hushed Whisper IPA"
+	desc = "A popular Sivian pale ale named for an infamous space pirate."
+	description_fluff = "Named for one of history's most infamous pirates, Qar’raqel, who ruled over Natuna before suffering a mysterious fate. This ale is brewed on Sif by a small company... Owned by Centauri Provisions."
+	icon_state = "alebottle2"
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/small/ale/hushedwhisper/Initialize()
+	. = ..()
+	reagents.add_reagent("ale", 50)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/sake
 	name = "Mono-No-Aware Luxury Sake"
@@ -537,15 +585,46 @@
 	icon_state = "sakebottle"
 	center_of_mass = list("x"=16, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/sake/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/sake/Initialize()
+	. = ..()
 	reagents.add_reagent("sake", 100)
 
 /obj/item/weapon/reagent_containers/food/drinks/bottle/champagne
 	name = "Gilthari Luxury Champagne"
 	desc = "For those special occassions."
 	icon_state = "champagne"
+	center_of_mass = list("x"=16, "y"=3)
 
-/obj/item/weapon/reagent_containers/food/drinks/bottle/champagne/New()
-	..()
+/obj/item/weapon/reagent_containers/food/drinks/bottle/champagne/Initialize()
+	. = ..()
 	reagents.add_reagent("champagne", 100)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/peppermintschnapps
+	name = "Dr. Bone's Peppermint Schnapps"
+	desc = "A flavoured grain liqueur with a fresh, minty taste."
+	icon_state = "schnapps_pep"
+	center_of_mass = list("x"=16, "y"=3)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/peppermintschnapps/Initialize()
+	. = ..()
+	reagents.add_reagent("schnapps_pep", 100)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/peachschnapps
+	name = "Dr. Bone's Peach Schnapps"
+	desc = "A flavoured grain liqueur with a fruity peach taste."
+	icon_state = "schnapps_pea"
+	center_of_mass = list("x"=16, "y"=3)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/peachschnapps/Initialize()
+	. = ..()
+	reagents.add_reagent("schnapps_pea", 100)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/lemonadeschnapps
+	name = "Dr. Bone's Lemonade Schnapps"
+	desc = "A flavoured grain liqueur with a sweetish, lemon taste."
+	icon_state = "schnapps_lem"
+	center_of_mass = list("x"=16, "y"=3)
+
+/obj/item/weapon/reagent_containers/food/drinks/bottle/lemonadeschnapps/Initialize()
+	. = ..()
+	reagents.add_reagent("schnapps_lem", 100)

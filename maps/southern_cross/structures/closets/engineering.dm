@@ -5,13 +5,8 @@
 
 /obj/structure/closet/secure_closet/engineering_chief_wardrobe
 	name = "chief engineer's wardrobe"
-	icon_state = "securece1"
-	icon_closed = "securece"
-	icon_locked = "securece1"
-	icon_opened = "secureceopen"
-	icon_broken = "securecebroken"
-	icon_off = "secureceoff"
 	req_access = list(access_ce)
+	closet_appearance = /decl/closet_appearance/secure_closet/engineering/ce
 
 	starts_with = list(
 		/obj/item/clothing/under/rank/chief_engineer,
@@ -27,7 +22,7 @@
 		/obj/item/taperoll/engineering,
 		/obj/item/clothing/suit/storage/hooded/wintercoat/engineering)
 
-/obj/structure/closet/secure_closet/engineering_chief_wardrobe/initialize()
+/obj/structure/closet/secure_closet/engineering_chief_wardrobe/Initialize()
 	if(prob(50))
 		starts_with += /obj/item/weapon/storage/backpack/industrial
 	else

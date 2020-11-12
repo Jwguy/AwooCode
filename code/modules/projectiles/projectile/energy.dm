@@ -4,15 +4,21 @@
 	damage = 0
 	damage_type = BURN
 	check_armour = "energy"
+
+	impact_effect_type = /obj/effect/temp_visual/impact_effect
+	hitsound_wall = 'sound/weapons/effects/searwall.ogg'
+	hitsound = 'sound/weapons/zapbang.ogg'
+
 	var/flash_strength = 10
 
 //releases a burst of light on impact or after travelling a distance
 /obj/item/projectile/energy/flash
 	name = "chemical shell"
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/gunshot/gunshot_pistol.ogg'
+	fire_sound = 'sound/weapons/gunshot_pathetic.ogg'
+	hitsound_wall = null
 	damage = 5
-	kill_count = 15 //if the shell hasn't hit anything after travelling this far it just explodes.
+	range = 15 //if the shell hasn't hit anything after travelling this far it just explodes.
 	var/flash_range = 0
 	var/brightness = 7
 	var/light_colour = "#ffffff"
@@ -48,7 +54,7 @@
 
 //blinds people like the flash round, but can also be used for temporary illumination
 /obj/item/projectile/energy/flash/flare
-	fire_sound = 'sound/weapons/gunshot/shotgun.ogg'
+	fire_sound = 'sound/weapons/grenade_launcher.ogg'
 	damage = 10
 	flash_range = 1
 	brightness = 15
@@ -65,7 +71,7 @@
 /obj/item/projectile/energy/electrode
 	name = "electrode"
 	icon_state = "spark"
-	fire_sound = 'sound/weapons/Gunshot.ogg'
+	fire_sound = 'sound/weapons/Gunshot2.ogg'
 	taser_effect = 1
 	agony = 40
 	light_range = 2
@@ -91,7 +97,21 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#33CC00"
+	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 
+	combustion = FALSE
+
+/obj/item/projectile/energy/excavate
+	name = "kinetic blast"
+	icon_state = "kinetic_blast"
+	fire_sound = 'sound/weapons/pulse3.ogg'
+	damage_type = BRUTE
+	damage = 30
+	armor_penetration = 60
+	excavation_amount = 200
+	check_armour = "melee"
+
+	vacuum_traversal = 0
 	combustion = FALSE
 
 /obj/item/projectile/energy/dart
@@ -123,6 +143,7 @@
 	damage_type = BURN
 	agony = 10
 	check_armour = "bio"
+	armor_penetration = 25	// It's acid
 
 	combustion = FALSE
 
@@ -130,9 +151,10 @@
 	name = "neurotoxic spit"
 	icon_state = "neurotoxin"
 	damage = 5
-	damage_type = TOX
+	damage_type = BIOACID
 	agony = 80
 	check_armour = "bio"
+	armor_penetration = 25	// It's acid-based
 
 	combustion = FALSE
 
@@ -140,9 +162,10 @@
 	name = "neurotoxic spit"
 	icon_state = "neurotoxin"
 	damage = 20
-	damage_type = TOX
+	damage_type = BIOACID
 	agony = 20
 	check_armour = "bio"
+	armor_penetration = 25	// It's acid-based
 
 /obj/item/projectile/energy/phoron
 	name = "phoron bolt"
@@ -154,6 +177,7 @@
 	light_range = 2
 	light_power = 0.5
 	light_color = "#33CC00"
+	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 
 	combustion = FALSE
 
@@ -162,7 +186,7 @@
 	icon_state = "plasma_stun"
 	fire_sound = 'sound/weapons/blaster.ogg'
 	armor_penetration = 10
-	kill_count = 4
+	range = 4
 	damage = 5
 	agony = 55
 	damage_type = BURN
@@ -171,7 +195,7 @@
 /obj/item/projectile/energy/plasmastun/proc/bang(var/mob/living/carbon/M)
 
 	to_chat(M, "<span class='danger'>You hear a loud roar.</span>")
-	playsound(M.loc, 'sound/effects/bang.ogg', 50, 1)
+	playsound(src, 'sound/effects/bang.ogg', 50, 1)
 	var/ear_safety = 0
 	ear_safety = M.get_ear_protection()
 	if(ear_safety == 1)
@@ -206,28 +230,29 @@
 	pass_flags = PASSTABLE | PASSGLASS | PASSGRILLE
 	damage_type = BURN
 	check_armour = "energy"
-	light_color = "#0000FF"
+	light_color = "#00AAFF"
 
 	embed_chance = 0
-	muzzle_type = /obj/effect/projectile/pulse/muzzle
+	muzzle_type = /obj/effect/projectile/muzzle/pulse
+	impact_effect_type = /obj/effect/temp_visual/impact_effect/monochrome_laser
 
 /obj/item/projectile/energy/phase
 	name = "phase wave"
 	icon_state = "phase"
-	kill_count = 6
+	range = 6
 	damage = 5
 	SA_bonus_damage = 45	// 50 total on animals
 	SA_vulnerability = SA_ANIMAL
 
 /obj/item/projectile/energy/phase/light
-	kill_count = 4
+	range = 4
 	SA_bonus_damage = 35	// 40 total on animals
 
 /obj/item/projectile/energy/phase/heavy
-	kill_count = 8
+	range = 8
 	SA_bonus_damage = 55	// 60 total on animals
 
 /obj/item/projectile/energy/phase/heavy/cannon
-	kill_count = 10
+	range = 10
 	damage = 15
 	SA_bonus_damage = 60	// 75 total on animals

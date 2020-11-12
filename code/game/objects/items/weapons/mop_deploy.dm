@@ -1,6 +1,7 @@
 /obj/item/weapon/mop_deploy
 	name = "mop"
 	desc = "Deployable mop."
+	icon = 'icons/obj/janitor.dmi'
 	icon_state = "mop"
 	force = 3
 	anchored = 1    // Never spawned outside of inventory, should be fine.
@@ -16,7 +17,7 @@
 
 /obj/item/weapon/mop_deploy/New()
 	create_reagents(5)
-	processing_objects |= src
+	START_PROCESSING(SSobj, src)
 
 /turf/proc/clean_deploy(atom/source)
 	if(source.reagents.has_reagent("water", 1))
@@ -40,7 +41,7 @@
 			var/turf/T = get_turf(A)
 			if(T)
 				T.clean_deploy(src)
-			user << "<span class='notice'>You have finished mopping!</span>"
+			to_chat(user, "<span class='notice'>You have finished mopping!</span>")
 
 /obj/effect/attackby(obj/item/I, mob/user)
 	if(istype(I, /obj/item/weapon/mop_deploy) || istype(I, /obj/item/weapon/soap))
@@ -48,7 +49,7 @@
 	..()
 
 /obj/item/weapon/mop_deploy/Destroy()
-	processing_objects -= src
+	STOP_PROCESSING(SSobj, src)
 	. = ..()
 
 /obj/item/weapon/mop_deploy/attack_self(mob/user as mob)

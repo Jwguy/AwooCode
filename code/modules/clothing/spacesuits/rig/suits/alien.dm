@@ -47,10 +47,17 @@
 	suit_type = "alien"
 	icon_state = "vox_rig"
 	armor = list(melee = 60, bullet = 50, laser = 40, energy = 15, bomb = 30, bio = 100, rad = 50)
-	item_flags = THICKMATERIAL|PHORONGUARD
+	flags = PHORONGUARD
+	item_flags = THICKMATERIAL
 	siemens_coefficient = 0.2
 	offline_slowdown = 5
-	allowed = list(/obj/item/weapon/gun,/obj/item/device/flashlight,/obj/item/weapon/tank,/obj/item/device/suit_cooling_unit)
+	allowed = list(
+		/obj/item/weapon/gun,
+		/obj/item/device/flashlight,
+		/obj/item/weapon/tank,
+		/obj/item/device/suit_cooling_unit,
+		/obj/item/weapon/storage
+		)
 
 	air_type = /obj/item/weapon/tank/vox
 

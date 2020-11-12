@@ -1,12 +1,12 @@
 /obj/item/weapon/gun/projectile/shotgun/pump
 	name = "shotgun"
-	desc = "The mass-produced W-T Remmington 29x shotgun is a favourite of police and security forces on many worlds. Uses 12g rounds."
+	desc = "The mass-produced MarsTech Meteor 29 shotgun is a favourite of police and security forces on many worlds. Uses 12g rounds."
+	description_fluff = "The leading civilian-sector high-quality small arms brand of Hephaestus Industries, MarsTech has been the provider of choice for law enforcement and security forces for over 300 years."
 	icon_state = "shotgun"
 	item_state = "shotgun"
 	max_shells = 4
 	w_class = ITEMSIZE_LARGE
 	force = 10
-	flags =  CONDUCT
 	slot_flags = SLOT_BACK
 	caliber = "12g"
 	origin_tech = list(TECH_COMBAT = 4, TECH_MATERIAL = 2)
@@ -14,10 +14,10 @@
 	ammo_type = /obj/item/ammo_casing/a12g/beanbag
 	projectile_type = /obj/item/projectile/bullet/shotgun
 	handle_casings = HOLD_CASINGS
-	var/recentpump = 0 // to prevent spammage
+	var/recentpump = 0 			//To prevent spammage
 	var/action_sound = 'sound/weapons/shotgunpump.ogg'
-	var/animated_pump = 0 //This is for cyling animations.
-	var/empty_sprite = 0 //This is just a dirty var so it doesn't fudge up.
+	var/empty_sprite = 0 		//This is just a dirty var so it doesn't fudge up.
+	var/pump_animation = "shotgun-pump"	//You put the reference to the animation in question here. Frees up namming. Ex: "shotgun_old_pump" or "sniper_cycle"
 
 /obj/item/weapon/gun/projectile/shotgun/pump/consume_next_projectile()
 	if(chambered)
@@ -30,7 +30,7 @@
 		recentpump = world.time
 
 /obj/item/weapon/gun/projectile/shotgun/pump/proc/pump(mob/M as mob)
-	playsound(M, action_sound, 60, 1)
+	playsound(src, action_sound, 60, 1)
 
 	if(chambered)//We have a shell in the chamber
 		chambered.loc = get_turf(src)//Eject casing
@@ -41,32 +41,41 @@
 		loaded -= AC //Remove casing from loaded list.
 		chambered = AC
 
-	if(animated_pump)//This affects all bolt action and shotguns. 
-		flick("[icon_state]-cycling", src)//This plays any pumping
+	if(pump_animation)//This affects all bolt action and shotguns.
+		flick("[pump_animation]", src)//This plays any pumping
 
 	update_icon()
 
 /obj/item/weapon/gun/projectile/shotgun/pump/update_icon()//This adds empty sprite capability for shotguns.
 	..()
-	if(!empty_sprite)//Just a dirty check 
+	if(!empty_sprite)//Just a dirty check
 		return
 	if((loaded.len) || (chambered))
 		icon_state = "[icon_state]"
 	else
 		icon_state = "[icon_state]-empty"
 
+/obj/item/weapon/gun/projectile/shotgun/pump/empty
+	ammo_type = null
+
 /obj/item/weapon/gun/projectile/shotgun/pump/slug
 	ammo_type = /obj/item/ammo_casing/a12g
+	pump_animation = null
 
 /obj/item/weapon/gun/projectile/shotgun/pump/combat
 	name = "combat shotgun"
 	desc = "Built for close quarters combat, the Hephaestus Industries KS-40 is widely regarded as a weapon of choice for repelling boarders. Uses 12g rounds."
+	description_fluff = "The leading arms producer in the SCG, Hephaestus typically only uses its 'top level' branding for its military-grade equipment used by armed forces across human space."
 	icon_state = "cshotgun"
 	item_state = "cshotgun"
 	origin_tech = list(TECH_COMBAT = 5, TECH_MATERIAL = 2)
 	max_shells = 7 //match the ammo box capacity, also it can hold a round in the chamber anyways, for a total of 8.
 	ammo_type = /obj/item/ammo_casing/a12g
 	load_method = SINGLE_CASING|SPEEDLOADER
+	pump_animation = "cshotgun-pump"
+
+/obj/item/weapon/gun/projectile/shotgun/pump/combat/empty
+	ammo_type = null
 
 /obj/item/weapon/gun/projectile/shotgun/doublebarrel
 	name = "double-barreled shotgun"
@@ -80,7 +89,6 @@
 	max_shells = 2
 	w_class = ITEMSIZE_LARGE
 	force = 10
-	flags =  CONDUCT
 	slot_flags = SLOT_BACK
 	caliber = "12g"
 	origin_tech = list(TECH_COMBAT = 3, TECH_MATERIAL = 1)
@@ -106,7 +114,7 @@
 //this is largely hacky and bad :(	-Pete
 /obj/item/weapon/gun/projectile/shotgun/doublebarrel/attackby(var/obj/item/A as obj, mob/user as mob)
 	if(istype(A, /obj/item/weapon/surgical/circular_saw) || istype(A, /obj/item/weapon/melee/energy) || istype(A, /obj/item/weapon/pickaxe/plasmacutter))
-		user << "<span class='notice'>You begin to shorten the barrel of \the [src].</span>"
+		to_chat(user, "<span class='notice'>You begin to shorten the barrel of \the [src].</span>")
 		if(loaded.len)
 			var/burstsetting = burst
 			burst = 2

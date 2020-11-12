@@ -30,7 +30,7 @@ FLOOR SAFES
 	tumbler_2_open = rand(0, 72)
 
 
-/obj/structure/safe/initialize()
+/obj/structure/safe/Initialize()
 	. = ..()
 	for(var/obj/item/I in loc)
 		if(space >= maxspace)
@@ -114,7 +114,7 @@ FLOOR SAFES
 				tumbler_2_pos = decrement(tumbler_2_pos)
 				if(canhear)
 					to_chat(user, "<span class='notice'>You hear a [pick("click", "chink", "clink")] from \the [src].</span>")
-					playsound(user, 'sound/machines/click.ogg', 20, 1)
+					playsound(src, 'sound/machines/click.ogg', 20, 1)
 			check_unlocked(user, canhear)		
 
 		updateUsrDialog()
@@ -130,7 +130,7 @@ FLOOR SAFES
 				tumbler_2_pos = increment(tumbler_2_pos)
 				if(canhear)
 					to_chat(user, "<span class='notice'>You hear a [pick("click", "chink", "clink")] from \the [src].</span>")
-					playsound(user, 'sound/machines/click.ogg', 20, 1)
+					playsound(src, 'sound/machines/click.ogg', 20, 1)
 			check_unlocked(user, canhear)
 		updateUsrDialog()
 		return
@@ -172,10 +172,10 @@ obj/structure/safe/ex_act(severity)
 	icon_state = "floorsafe"
 	density = 0
 	level = 1	//underfloor
-	plane = TURF_PLANE
+	plane = PLATING_PLANE
 	layer = ABOVE_UTILITY
 
-/obj/structure/safe/floor/initialize()
+/obj/structure/safe/floor/Initialize()
 	. = ..()
 	var/turf/T = loc
 	if(istype(T) && !T.is_plating())

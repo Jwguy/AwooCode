@@ -38,7 +38,7 @@
 			oldlimb.removed()
 			qdel(oldlimb)
 
-		var/mob/living/simple_animal/protean_blob/blob = nano_intoblob()
+		var/mob/living/simple_mob/protean_blob/blob = nano_intoblob()
 		active_regen = TRUE
 		if(do_after(blob,5 SECONDS))
 			var/list/limblist = species.has_limbs[choice]
@@ -46,6 +46,7 @@
 			var/obj/item/organ/external/new_eo = new limbpath(src)
 			organs_by_name[choice] = new_eo
 			new_eo.robotize(synthetic ? synthetic.company : null) //Use the base we started with
+			new_eo.sync_colour_to_human(src)
 			regenerate_icons()
 		active_regen = FALSE
 		nano_outofblob(blob)
@@ -128,7 +129,7 @@
 		to_chat(src, "<span class='danger'>Remain still while the process takes place! It will take 5 seconds.</span>")
 		visible_message("<B>[src]</B>'s form collapses into an amorphous blob of black ichor...")
 
-		var/mob/living/simple_animal/protean_blob/blob = nano_intoblob()
+		var/mob/living/simple_mob/protean_blob/blob = nano_intoblob()
 		active_regen = TRUE
 		if(do_after(blob,5 SECONDS))
 			synthetic = usable_manufacturers[manu_choice]
@@ -149,7 +150,7 @@
 	visible_message("<B>[src]</B>'s form begins to shift and ripple as if made of oil...")
 	active_regen = TRUE
 
-	var/mob/living/simple_animal/protean_blob/blob = nano_intoblob()
+	var/mob/living/simple_mob/protean_blob/blob = nano_intoblob()
 	if(do_after(blob, delay_length, null, 0))
 		if(stat != DEAD && refactory)
 			var/list/holder = refactory.materials
@@ -200,7 +201,7 @@
 
 	var/obj/item/stack/material/matstack = held
 	var/substance = matstack.material.name
-	var/list/edible_materials = list("steel", "plasteel", "diamond", "mhydrogen") //Can't eat all materials, just useful ones.
+	var/list/edible_materials = list(MAT_STEEL, MAT_SILVER, MAT_GOLD, MAT_URANIUM, MAT_METALHYDROGEN) //Can't eat all materials, just useful ones.
 	var allowed = FALSE
 	for(var/material in edible_materials)
 		if(material == substance) allowed = TRUE
@@ -213,7 +214,7 @@
 		return //Quietly fail
 
 	var/actually_added = refactory.add_stored_material(substance,howmuch*matstack.perunit)
-	matstack.use(Ceiling(actually_added/matstack.perunit))
+	matstack.use(CEILING((actually_added/matstack.perunit), 1))
 	if(actually_added && actually_added < howmuch)
 		to_chat(src,"<span class='warning'>Your refactory module is now full, so only [actually_added] units were stored.</span>")
 		visible_message("<span class='notice'>[src] nibbles some of the [substance] right off the stack!</span>")
@@ -260,7 +261,7 @@
 		to_chat(src,"<span class='warning'>You must be awake and standing to perform this action!</span>")
 		return
 
-	var/new_species = input("Please select a species to emulate.", "Shapeshifter Body") as null|anything in playable_species
+	var/new_species = input("Please select a species to emulate.", "Shapeshifter Body") as null|anything in GLOB.playable_species
 	if(new_species)
 		impersonate_bodytype = new_species
 		regenerate_icons() //Expensive, but we need to recrunch all the icons we're wearing
@@ -283,7 +284,7 @@
 
 	var/nagmessage = "Adjust your mass to be a size between 25 to 200%. Up-sizing consumes metal, downsizing returns metal."
 	var/new_size = input(user, nagmessage, "Pick a Size", user.size_multiplier*100) as num|null
-	if(!new_size || !IsInRange(new_size,25,200))
+	if(!new_size || !ISINRANGE(new_size,25,200))
 		return
 
 	var/size_factor = new_size/100
@@ -298,14 +299,14 @@
 
 	//Sizing up
 	if(cost > 0)
-		if(refactory.use_stored_material("steel",cost))
+		if(refactory.use_stored_material(MAT_STEEL,cost))
 			user.resize(size_factor)
 		else
 			to_chat(user,"<span class='warning'>That size change would cost [cost] steel, which you don't have.</span>")
 	//Sizing down (or not at all)
 	else if(cost <= 0)
 		cost = abs(cost)
-		var/actually_added = refactory.add_stored_material("steel",cost)
+		var/actually_added = refactory.add_stored_material(MAT_STEEL,cost)
 		user.resize(size_factor)
 		if(actually_added != cost)
 			to_chat(user,"<span class='warning'>Unfortunately, [cost-actually_added] steel was lost due to lack of storage space.</span>")
@@ -319,7 +320,7 @@
 			return R
 	return
 
-/mob/living/simple_animal/protean_blob/nano_get_refactory()
+/mob/living/simple_mob/protean_blob/nano_get_refactory()
 	if(refactory)
 		return ..(refactory)
 	if(humanform)
@@ -353,7 +354,7 @@
 			do_ability(usr)
 		//Blobform using it
 		else
-			var/mob/living/simple_animal/protean_blob/blob = usr
+			var/mob/living/simple_mob/protean_blob/blob = usr
 			do_ability(blob.humanform)
 
 /obj/effect/protean_ability/proc/do_ability(var/mob/living/L)

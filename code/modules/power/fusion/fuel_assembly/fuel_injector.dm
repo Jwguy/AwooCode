@@ -7,7 +7,7 @@ var/list/fuel_injectors = list()
 	density = 1
 	anchored = 0
 	req_access = list(access_engine)
-	use_power = 1
+	use_power = USE_POWER_IDLE
 	idle_power_usage = 10
 	active_power_usage = 500
 
@@ -18,7 +18,7 @@ var/list/fuel_injectors = list()
 	var/injecting = 0
 	var/obj/item/weapon/fuel_assembly/cur_assembly
 
-/obj/machinery/fusion_fuel_injector/initialize()
+/obj/machinery/fusion_fuel_injector/Initialize()
 	. = ..()
 	fuel_injectors += src
 	default_apply_parts()
@@ -103,13 +103,13 @@ var/list/fuel_injectors = list()
 	if(!injecting && cur_assembly)
 		icon_state = "injector1"
 		injecting = 1
-		use_power = 1
+		update_use_power(USE_POWER_IDLE)
 
 /obj/machinery/fusion_fuel_injector/proc/StopInjecting()
 	if(injecting)
 		injecting = 0
 		icon_state = "injector0"
-		use_power = 0
+		update_use_power(USE_POWER_OFF)
 
 /obj/machinery/fusion_fuel_injector/proc/Inject()
 	if(!injecting)
@@ -134,22 +134,22 @@ var/list/fuel_injectors = list()
 	else
 		StopInjecting()
 
-/obj/machinery/fusion_fuel_injector/verb/rotate_clock()
+/obj/machinery/fusion_fuel_injector/verb/rotate_clockwise()
 	set category = "Object"
-	set name = "Rotate Generator (Clockwise)"
+	set name = "Rotate Generator Clockwise"
 	set src in view(1)
 
 	if (usr.incapacitated() || usr.restrained()  || anchored)
 		return
 
-	src.dir = turn(src.dir, -90)
+	src.set_dir(turn(src.dir, 270))
 
-/obj/machinery/fusion_fuel_injector/verb/rotate_anticlock()
+/obj/machinery/fusion_fuel_injector/verb/rotate_counterclockwise()
 	set category = "Object"
-	set name = "Rotate Generator (Counter-clockwise)"
+	set name = "Rotate Generator Counterclockwise"
 	set src in view(1)
 
 	if (usr.incapacitated() || usr.restrained()  || anchored)
 		return
 
-	src.dir = turn(src.dir, 90)
+	src.set_dir(turn(src.dir, 90))

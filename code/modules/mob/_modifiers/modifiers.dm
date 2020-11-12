@@ -20,6 +20,10 @@
 	var/light_intensity = null			// Ditto. Not implemented yet.
 	var/mob_overlay_state = null		// Icon_state for an overlay to apply to a (human) mob while this exists.  This is actually implemented.
 	var/client_color = null				// If set, the client will have the world be shown in this color, from their perspective.
+	var/wire_colors_replace = null		// If set, the client will have wires replaced by the given replacement list. For colorblindness. //VOREStation Add
+	var/list/filter_parameters = null	// If set, will add a filter to the holder with the parameters in this var. Must be a list.
+	var/filter_priority = 1				// Used to make filters be applied in a specific order, if that is important.
+	var/filter_instance = null			// Instance of a filter created with the `filter_parameters` list. This exists to make `animate()` calls easier. Don't set manually.
 
 	// Now for all the different effects.
 	// Percentage modifiers are expressed as a multipler. (e.g. +25% damage should be written as 1.25)
@@ -42,9 +46,24 @@
 	var/accuracy						// Positive numbers makes hitting things with guns easier, negatives make it harder.
 	var/accuracy_dispersion				// Positive numbers make gun firing cover a wider tile range, and therefore more inaccurate.  Negatives help negate dispersion penalties.
 	var/metabolism_percent				// Adjusts the mob's metabolic rate, which affects reagent processing.  Won't affect mobs without reagent processing.
-	var/icon_scale_percent				// Makes the holder's icon get scaled up or down.
+	var/icon_scale_x_percent			// Makes the holder's icon get scaled wider or thinner.
+	var/icon_scale_y_percent			// Makes the holder's icon get scaled taller or shorter.
 	var/attack_speed_percent			// Makes the holder's 'attack speed' (click delay) shorter or longer.
 	var/pain_immunity					// Makes the holder not care about pain while this is on. Only really useful to human mobs.
+	var/pulse_modifier					// Modifier for pulse, will be rounded on application, then added to the normal 'pulse' multiplier which ranges between 0 and 5 normally. Only applied if they're living.
+	var/pulse_set_level					// Positive number. If this is non-null, it will hard-set the pulse level to this. Pulse ranges from 0 to 5 normally.
+	var/emp_modifier					// Added to the EMP strength, which is an inverse scale from 1 to 4, with 1 being the strongest EMP. 5 is a nullification.
+	var/explosion_modifier				// Added to the bomb strength, which is an inverse scale from 1 to 3, with 1 being gibstrength. 4 is a nullification.
+
+	// Note that these are combined with the mob's real armor values additatively. You can also omit specific armor types.
+	var/list/armor_percent = null		// List of armor values to add to the holder when doing armor calculations. This is for percentage based armor. E.g. 50 = half damage.
+	var/list/armor_flat = null			// Same as above but only for flat armor calculations. E.g. 5 = 5 less damage (this comes after percentage).
+	// Unlike armor, this is multiplicative. Two 50% protection modifiers will be combined into 75% protection (assuming no base protection on the mob).
+	var/heat_protection = null			// Modifies how 'heat' protection is calculated, like wearing a firesuit. 1 = full protection.
+	var/cold_protection = null			// Ditto, but for cold, like wearing a winter coat.
+	var/siemens_coefficient = null		// Similar to above two vars but 0 = full protection, to be consistant with siemens numbers everywhere else.
+
+	var/vision_flags					// Vision flags to add to the mob. SEE_MOB, SEE_OBJ, etc.
 
 /datum/modifier/New(var/new_holder, var/new_origin)
 	holder = new_holder
@@ -56,7 +75,7 @@
 
 // Checks if the modifier should be allowed to be applied to the mob before attaching it.
 // Override for special criteria, e.g. forbidding robots from receiving it.
-/datum/modifier/proc/can_apply(var/mob/living/L)
+/datum/modifier/proc/can_apply(var/mob/living/L, var/suppress_output = FALSE)
 	return TRUE
 
 // Checks to see if this datum should continue existing.
@@ -71,10 +90,12 @@
 	holder.modifiers.Remove(src)
 	if(mob_overlay_state) // We do this after removing ourselves from the list so that the overlay won't remain.
 		holder.update_modifier_visuals()
-	if(icon_scale_percent) // Correct the scaling.
+	if(icon_scale_x_percent || icon_scale_y_percent) // Correct the scaling.
 		holder.update_transform()
 	if(client_color)
 		holder.update_client_color()
+	if(LAZYLEN(filter_parameters))
+		holder.remove_filter(REF(src))
 	qdel(src)
 
 // Override this for special effects when it gets added to the mob.
@@ -110,7 +131,8 @@
 // Call this to add a modifier to a mob. First argument is the modifier type you want, second is how long it should last, in ticks.
 // Third argument is the 'source' of the modifier, if it's from someone else.  If null, it will default to the mob being applied to.
 // The SECONDS/MINUTES macro is very helpful for this.  E.g. M.add_modifier(/datum/modifier/example, 5 MINUTES)
-/mob/living/proc/add_modifier(var/modifier_type, var/expire_at = null, var/mob/living/origin = null)
+// The fourth argument is a boolean to suppress failure messages, set it to true if the modifier is repeatedly applied (as chem-based modifiers are) to prevent chat-spam
+/mob/living/proc/add_modifier(var/modifier_type, var/expire_at = null, var/mob/living/origin = null, var/suppress_failure = FALSE)
 	// First, check if the mob already has this modifier.
 	for(var/datum/modifier/M in modifiers)
 		if(ispath(modifier_type, M))
@@ -127,7 +149,7 @@
 
 	// If we're at this point, the mob doesn't already have it, or it does but stacking is allowed.
 	var/datum/modifier/mod = new modifier_type(src, origin)
-	if(!mod.can_apply(src))
+	if(!mod.can_apply(src, suppress_failure))
 		qdel(mod)
 		return
 	if(expire_at)
@@ -138,16 +160,26 @@
 	mod.on_applied()
 	if(mod.mob_overlay_state)
 		update_modifier_visuals()
-	if(mod.icon_scale_percent)
+	if(mod.icon_scale_x_percent || mod.icon_scale_y_percent)
 		update_transform()
 	if(mod.client_color)
 		update_client_color()
+	if(LAZYLEN(mod.filter_parameters))
+		add_filter(REF(mod), mod.filter_priority, mod.filter_parameters)
+		mod.filter_instance = get_filter(REF(mod))
 
 	return mod
 
 // Removes a specific instance of modifier
 /mob/living/proc/remove_specific_modifier(var/datum/modifier/M, var/silent = FALSE)
 	M.expire(silent)
+
+// Removes one modifier of a type
+/mob/living/proc/remove_a_modifier_of_type(var/modifier_type, var/silent = FALSE)
+	for(var/datum/modifier/M in modifiers)
+		if(ispath(M.type, modifier_type))
+			M.expire(silent)
+			break
 
 // Removes all modifiers of a type
 /mob/living/proc/remove_modifiers_of_type(var/modifier_type, var/silent = FALSE)
@@ -162,10 +194,14 @@
 
 // Checks if the mob has a modifier type.
 /mob/living/proc/has_modifier_of_type(var/modifier_type)
+	return get_modifier_of_type(modifier_type) ? TRUE : FALSE
+
+// Gets the first instance of a specific modifier type or subtype.
+/mob/living/proc/get_modifier_of_type(var/modifier_type)
 	for(var/datum/modifier/M in modifiers)
 		if(istype(M, modifier_type))
-			return TRUE
-	return FALSE
+			return M
+	return null
 
 // This displays the actual 'numbers' that a modifier is doing.  Should only be shown in OOC contexts.
 // When adding new effects, be sure to update this as well.
@@ -223,8 +259,11 @@
 		effects += "Your metabolism is [metabolism_percent > 1.0 ? "faster" : "slower"], \
 		causing reagents in your body to process, and hunger to occur [multipler_to_percentage(metabolism_percent, TRUE)] [metabolism_percent > 1.0 ? "faster" : "slower"]."
 
-	if(!isnull(icon_scale_percent))
-		effects += "Your appearance is [multipler_to_percentage(icon_scale_percent, TRUE)] [icon_scale_percent > 1 ? "larger" : "smaller"]."
+	if(!isnull(icon_scale_x_percent))
+		effects += "Your appearance is [multipler_to_percentage(icon_scale_x_percent, TRUE)] [icon_scale_x_percent > 1 ? "wider" : "thinner"]."
+
+	if(!isnull(icon_scale_y_percent))
+		effects += "Your appearance is [multipler_to_percentage(icon_scale_y_percent, TRUE)] [icon_scale_y_percent > 1 ? "taller" : "shorter"]."
 
 	if(!isnull(attack_speed_percent))
 		effects += "The delay between attacking is [multipler_to_percentage(attack_speed_percent, TRUE)] [disable_duration_percent > 1.0 ? "longer" : "shorter"]."

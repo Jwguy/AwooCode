@@ -57,7 +57,7 @@
 	desc = "A complicated piece of technology which converts bodily nutriments of a host into electricity."
 	extended_desc = "The siphon generates 10W of energy, so long as the siphon exists inside a biological entity.  The entity will feel an increased \
 	appetite and will need to eat more often due to this.  This device will fail if used inside synthetic entities."
-	icon_state = "setup_implant"
+	icon_state = "implant_power"
 	complexity = 10
 	origin_tech = list(TECH_POWER = 4, TECH_ENGINEERING = 4, TECH_DATA = 4, TECH_BIO = 5)
 	spawn_flags = IC_SPAWN_RESEARCH
@@ -82,8 +82,6 @@
 	desc = "A small circuit designed to be connected to an internal power wire inside a synthetic entity."
 	extended_desc = "The siphon generates 10W of energy, so long as the siphon exists inside a synthetic entity.  The entity need to recharge \
 	more often due to this.  This device will fail if used inside organic entities."
-	icon_state = "setup_implant"
-	complexity = 10
 	origin_tech = list(TECH_POWER = 3, TECH_ENGINEERING = 4, TECH_DATA = 3)
 	spawn_flags = IC_SPAWN_RESEARCH
 
@@ -162,7 +160,7 @@
 	var/area/A = get_area(src)
 	if(A)
 		if(A.powered(EQUIP) && assembly.give_power(power_amount))
-			A.use_power(power_amount, EQUIP)
+			A.use_power_oneoff(power_amount, EQUIP)
 			// give_power() handles CELLRATE on its own.
 
 // Interacts with the powernet.
@@ -191,7 +189,7 @@
 	var/obj/machinery/power/circuit_io/IO = null // Dummy power machine to move energy in/out without a bunch of code duplication.
 	var/throughput = 10000 // Give/take up to 10kW.
 
-/obj/item/integrated_circuit/passive/power/powernet/initialize()
+/obj/item/integrated_circuit/passive/power/powernet/Initialize()
 	IO = new(src)
 	return ..()
 

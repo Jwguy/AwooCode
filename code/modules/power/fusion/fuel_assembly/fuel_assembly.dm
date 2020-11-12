@@ -17,9 +17,9 @@
 	fuel_colour = _colour
 	..(newloc)
 
-/obj/item/weapon/fuel_assembly/initialize()
+/obj/item/weapon/fuel_assembly/Initialize()
 	. = ..()
-	var/material/material = get_material_by_name(fuel_type)
+	var/datum/material/material = get_material_by_name(fuel_type)
 	if(istype(material))
 		name = "[material.use_name] fuel rod assembly"
 		desc = "A fuel rod for a fusion reactor. This one is made from [material.use_name]."
@@ -28,7 +28,7 @@
 		if(material.radioactivity)
 			radioactivity = material.radioactivity
 			desc += " It is warm to the touch."
-			processing_objects += src
+			START_PROCESSING(SSobj, src)
 		if(material.luminescence)
 			set_light(material.luminescence, material.luminescence, material.icon_colour)
 	else
@@ -46,10 +46,10 @@
 		return PROCESS_KILL
 
 	if(istype(loc, /turf))
-		radiation_repository.radiate(src, max(1,ceil(radioactivity/30)))
+		SSradiation.radiate(src, max(1,CEILING(radioactivity/30, 1)))
 
 /obj/item/weapon/fuel_assembly/Destroy()
-	processing_objects -= src
+	STOP_PROCESSING(SSobj, src)
 	return ..()
 
 // Mapper shorthand.

@@ -24,12 +24,12 @@
 	100 - low_probability * 50;"spacesuit", \
 	"health", \
 	25 + low_probability * 75;"snacks", \
-	25;"alien", \
+	/*25;"alien", \ */ //VORESTATION AI TEMPORARY REMOVAL
 	"lights", \
 	25 - low_probability * 25;"engineering", \
 	25 - low_probability * 25;"coffin", \
-	25;"mimic", \
-	25;"viscerator", \
+	/*25;"mimic", \ //VORESTATION AI TEMPORARY REMOVAL
+	25;"viscerator", \ */ //VORESTATION AI TEMPORARY REMOVAL
 	))
 		if("treasure")
 			var/obj/structure/closet/crate/C = new(src.loc)
@@ -52,7 +52,7 @@
 				var/amount = rand(2,6)
 				var/quantity = rand(10,50)
 				var/list/possible_spawns = list()
-				for(var/bar_type in typesof(/obj/item/stack/material) - /obj/item/stack/material - /obj/item/stack/material/animalhide - typesof(/obj/item/stack/material/cyborg))
+				for(var/bar_type in typesof(/obj/item/stack/material) - /obj/item/stack/material - /obj/item/stack/animalhide - typesof(/obj/item/stack/material/cyborg))
 					possible_spawns += bar_type
 
 				var/bar_type = pick(possible_spawns)
@@ -78,8 +78,6 @@
 				new /obj/effect/decal/remains/xeno(src.loc)
 		if("clothes")
 			var/obj/structure/closet/C = new(src.loc)
-			C.icon_state = "blue"
-			C.icon_closed = "blue"
 			if(prob(33))
 				new /obj/item/clothing/under/color/rainbow(C)
 				new /obj/item/clothing/shoes/rainbow(C)
@@ -283,13 +281,13 @@
 				if(live_cargo) // Carp! Since Facehuggers got removed.
 					var/num = rand(1,3)
 					for(var/i=0,i<num,i++)
-						new /mob/living/simple_animal/hostile/carp(C)
+						new /mob/living/simple_mob/animal/space/carp(C)
 				else // Just a costume.
 					new /obj/item/clothing/suit/storage/hooded/carp_costume(C)
 			else if(prob(50))
 				if(live_cargo) // Something else very much alive and angry.
-					var/spawn_type = pick(/mob/living/simple_animal/hostile/alien, /mob/living/simple_animal/hostile/alien/drone, /mob/living/simple_animal/hostile/alien/sentinel)
-					new spawn_type(C)
+					var/spawn_type = pick(/mob/living/simple_mob/animal/space/alien, /mob/living/simple_mob/animal/space/alien/drone, /mob/living/simple_mob/animal/space/alien/sentinel)
+					new spawn_type(C) 
 				else // Just a costume.
 					new /obj/item/clothing/head/xenos(C)
 					new /obj/item/clothing/suit/xenos(C)
@@ -336,14 +334,17 @@
 				new /obj/effect/decal/remains/xeno(src)
 		if("mimic")
 			//a guardian of the tomb!
-			var/mob/living/simple_animal/hostile/mimic/crate/mimic = new(src.loc)
-			mimic.faction = spawned_faction
+			// var/mob/living/simple_mob/hostile/mimic/crate/mimic = new(src.loc)
+			// mimic.faction = spawned_faction
+			var/obj/structure/closet/crate/secure/gear/C = new(src.loc) //VORESTATION AI TEMPORARY EDIT
+			new /obj/item/weapon/storage/toolbox/electrical(C) //Placeholder to prevent errors. //VORESTATION AI TEMPORARY EDIT
 		if("viscerator")
 			//more tomb guardians!
-			var/num = rand(1,3)
-			var/obj/structure/closet/crate/secure/gear/C = new(src.loc)
-			for(var/i=0,i<num,i++)
-				new /mob/living/simple_animal/hostile/viscerator(C)
+			//var/num = rand(1,3) //VORESTATION AI TEMPORARY REMOVAL
+			var/obj/structure/closet/crate/secure/gear/C = new(src.loc) //VORESTATION AI TEMPORARY EDIT
+			new /obj/item/weapon/storage/toolbox/electrical(C) //Placeholder to prevent errors. //VORESTATION AI TEMPORARY EDIT
+			//for(var/i=0,i<num,i++) //VORESTATION AI TEMPORARY REMOVAL
+				//new /mob/living/simple_mob/hostile/viscerator(C)  //VORESTATION AI TEMPORARY REMOVAL
 
 	qdel(src)
 
@@ -391,3 +392,8 @@
 /obj/structure/symbol/sa
 	desc = "It looks like a right triangle with a dot to the side. It reminds you of a wooden strut between a wall and ceiling."
 	icon_state = "sa"
+
+/obj/structure/symbol/maint
+	name = "maintenance panel"
+	desc = "This sign suggests that the wall it's attached to can be opened somehow."
+	icon_state = "maintenance_panel"

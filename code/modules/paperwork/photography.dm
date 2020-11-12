@@ -29,11 +29,12 @@ var/global/photo_count = 0
 	icon_state = "photo"
 	item_state = "paper"
 	w_class = ITEMSIZE_SMALL
+	drop_sound = 'sound/items/drop/paper.ogg'
+	pickup_sound = 'sound/items/pickup/paper.ogg'
 	var/id
 	var/icon/img	//Big photo image
 	var/scribble	//Scribble on the back.
 	var/icon/tiny
-	var/cursed = 0
 	var/photo_size = 3
 
 /obj/item/weapon/photo/New()
@@ -52,11 +53,12 @@ var/global/photo_count = 0
 	..()
 
 /obj/item/weapon/photo/examine(mob/user)
+	//This is one time we're not going to call parent, because photos are 'secret' unless you're close enough.
 	if(in_range(user, src))
 		show(user)
-		user << desc
+		return list(desc)
 	else
-		user << "<span class='notice'>It is too far away.</span>"
+		return list("<span class='notice'>It is too far away to examine.</span>")
 
 /obj/item/weapon/photo/proc/show(mob/user as mob)
 	user << browse_rsc(img, "tmp_photo_[id].png")
@@ -97,7 +99,7 @@ var/global/photo_count = 0
 		var/mob/living/carbon/human/M = usr
 		if(!( istype(over_object, /obj/screen) ))
 			return ..()
-		playsound(loc, "rustle", 50, 1, -5)
+		playsound(src, "rustle", 50, 1, -5)
 		if((!( M.restrained() ) && !( M.stat ) && M.back == src))
 			switch(over_object.name)
 				if("r_hand")
@@ -125,7 +127,6 @@ var/global/photo_count = 0
 	icon_state = "camera"
 	item_state = "camera"
 	w_class = ITEMSIZE_SMALL
-	flags = CONDUCT
 	slot_flags = SLOT_BELT
 	matter = list(DEFAULT_WALL_MATERIAL = 2000)
 	var/pictures_max = 10
@@ -142,7 +143,7 @@ var/global/photo_count = 0
 	var/nsize = input("Photo Size","Pick a size of resulting photo.") as null|anything in list(1,3,5,7)
 	if(nsize)
 		size = nsize
-		usr << "<span class='notice'>Camera will now take [size]x[size] photos.</span>"
+		to_chat(usr, "<span class='notice'>Camera will now take [size]x[size] photos.</span>")
 
 /obj/item/device/camera/attack(mob/living/carbon/human/M as mob, mob/user as mob)
 	return
@@ -153,15 +154,15 @@ var/global/photo_count = 0
 		src.icon_state = icon_on
 	else
 		src.icon_state = icon_off
-	user << "You switch the camera [on ? "on" : "off"]."
+	to_chat(user, "You switch the camera [on ? "on" : "off"].")
 	return
 
 /obj/item/device/camera/attackby(obj/item/I as obj, mob/user as mob)
 	if(istype(I, /obj/item/device/camera_film))
 		if(pictures_left)
-			user << "<span class='notice'>[src] still has some film in it!</span>"
+			to_chat(user, "<span class='notice'>[src] still has some film in it!</span>")
 			return
-		user << "<span class='notice'>You insert [I] into [src].</span>"
+		to_chat(user, "<span class='notice'>You insert [I] into [src].</span>")
 		user.drop_item()
 		qdel(I)
 		pictures_left = pictures_max
@@ -194,7 +195,7 @@ var/global/photo_count = 0
 	for(var/i; i <= sorted.len; i++)
 		var/atom/A = sorted[i]
 		if(A)
-			var/icon/img = getFlatIcon(A)//, picture_planes = picture_planes)//build_composite_icon(A) //VOREStation Edit
+			var/icon/img = getFlatIcon(A, no_anim = TRUE)//, picture_planes = picture_planes)//build_composite_icon(A) //VOREStation Edit
 
 			// If what we got back is actually a picture, draw it.
 			if(istype(img, /icon))
@@ -215,7 +216,7 @@ var/global/photo_count = 0
 		// Calculate where we are relative to the center of the photo
 		var/xoff = (the_turf.x - center.x) * 32 + center_offset
 		var/yoff = (the_turf.y - center.y) * 32 + center_offset
-		res.Blend(getFlatIcon(the_turf.loc), blendMode2iconMode(the_turf.blend_mode),xoff,yoff)
+		res.Blend(getFlatIcon(the_turf.loc, no_anim = TRUE), blendMode2iconMode(the_turf.blend_mode),xoff,yoff)
 	return res
 
 
@@ -237,21 +238,17 @@ var/global/photo_count = 0
 		else
 			mob_detail += "You can also see [A] on the photo[A:health < 75 ? " - [A] looks hurt":""].[holding ? " [holding]":"."]."
 
-	for(var/mob/living/simple_animal/hostile/statue/S in the_turf)
-		if(S)
-		 mob_detail +=	"You can see \a [S] on the photo. Its stare makes you feel uneasy." //"That which holds the image of an angel, becomes itself an angel."
-
 	return mob_detail
 
 /obj/item/device/camera/afterattack(atom/target as mob|obj|turf|area, mob/user as mob, flag)
 	if(!on || !pictures_left || ismob(target.loc)) return
 	captureimage(target, user, flag)
 
-	playsound(loc, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, 1, -3)
+	playsound(src, pick('sound/items/polaroid1.ogg', 'sound/items/polaroid2.ogg'), 75, 1, -3)
 
 	pictures_left--
 	desc = "A polaroid camera. It has [pictures_left] photos left."
-	user << "<span class='notice'>[pictures_left] photos left.</span>"
+	to_chat(user, "<span class='notice'>[pictures_left] photos left.</span>")
 	icon_state = icon_off
 	on = 0
 	spawn(64)
@@ -282,20 +279,7 @@ var/global/photo_count = 0
 		y_c--
 		x_c = x_c - size
 
-
-
-
 	var/obj/item/weapon/photo/p = createpicture(target, user, turfs, mobs, flag)
-	if(findtext(mobs, "Its stare makes you feel uneasy"))
-		p.cursed = 1
-		user.visible_message("<span class='userdanger'>Something starts to slowly manifest from the picture!</span>")
-		spawn(150)
-			var/turf/T = get_turf(p)
-			var/mob/living/simple_animal/hostile/statue/S = new /mob/living/simple_animal/hostile/statue/(T)
-			S.banishable = 1//At least you can get rid of those bastards
-			T.visible_message("<span class='userdanger'>The photo turns into \a [S]!</span>")
-			qdel(p)
-
 
 	printpicture(user, p)
 
@@ -339,16 +323,6 @@ var/global/photo_count = 0
 	p.pixel_y = pixel_y
 	p.photo_size = photo_size
 	p.scribble = scribble
-	p.cursed = cursed
-	if(p.cursed)
-		var/turf/T = get_turf(p)
-		T.visible_message("<span class='userdanger'>Something starts to slowly manifest from the picture!</span>")
-		spawn(150)
-			T = get_turf(p) //second time, because the photo could've moved
-			var/mob/living/simple_animal/hostile/statue/S = new /mob/living/simple_animal/hostile/statue/(T)
-			S.banishable = 1//At least you can get rid of those bastards
-			T.visible_message("<span class='userdanger'>The photo turns into \a [S]!</span>")
-			qdel(p)
 
 	if(copy_id)
 		p.id = id

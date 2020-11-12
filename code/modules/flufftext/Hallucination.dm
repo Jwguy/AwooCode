@@ -28,13 +28,13 @@ mob/living/carbon/proc/handle_hallucinations()
 		switch(halpick)
 			if(0 to 15)
 				//Screwy HUD
-				//src << "Screwy HUD"
+				//to_chat(src, "Screwy HUD")
 				hal_screwyhud = pick(1,2,3,3,4,4)
 				spawn(rand(100,250))
 					hal_screwyhud = 0
 			if(16 to 25)
 				//Strange items
-				//src << "Traitor Items"
+				//to_chat(src, "Traitor Items")
 				if(!halitem)
 					halitem = new
 					var/list/slots_free = list(ui_lhand,ui_rhand)
@@ -82,7 +82,7 @@ mob/living/carbon/proc/handle_hallucinations()
 							halitem = null
 			if(26 to 40)
 				//Flashes of danger
-				//src << "Danger Flash"
+				//to_chat(src, "Danger Flash")
 				if(!halimage)
 					var/list/possible_points = list()
 					for(var/turf/simulated/floor/F in view(src,world.view))
@@ -92,13 +92,13 @@ mob/living/carbon/proc/handle_hallucinations()
 
 						switch(rand(1,3))
 							if(1)
-								//src << "Space"
+								//to_chat(src, "Space")
 								halimage = image('icons/turf/space.dmi',target,"[rand(1,25)]",TURF_LAYER)
 							if(2)
-								//src << "Fire"
+								//to_chat(src, "Fire")
 								halimage = image('icons/effects/fire.dmi',target,"1",TURF_LAYER)
 							if(3)
-								//src << "C4"
+								//to_chat(src, "C4")
 								halimage = image('icons/obj/assemblies.dmi',target,"plastic-explosive2",OBJ_LAYER+0.01)
 
 
@@ -110,9 +110,9 @@ mob/living/carbon/proc/handle_hallucinations()
 
 			if(41 to 65)
 				//Strange audio
-				//src << "Strange Audio"
+				//to_chat(src, "Strange Audio")
 				switch(rand(1,12))
-					if(1) src << 'sound/machines/airlock.ogg'
+					if(1) src << 'sound/machines/door/old_airlock.ogg'
 					if(2)
 						if(prob(50))src << 'sound/effects/Explosion1.ogg'
 						else src << 'sound/effects/Explosion2.ogg'
@@ -121,12 +121,12 @@ mob/living/carbon/proc/handle_hallucinations()
 					if(5) src << 'sound/effects/Glassbr2.ogg'
 					if(6) src << 'sound/effects/Glassbr3.ogg'
 					if(7) src << 'sound/machines/twobeep.ogg'
-					if(8) src << 'sound/machines/windowdoor.ogg'
+					if(8) src << 'sound/machines/door/windowdoor.ogg'
 					if(9)
 						//To make it more realistic, I added two gunshots (enough to kill)
-						src << 'sound/weapons/Gunshot.ogg'
+						src << 'sound/weapons/Gunshot1.ogg'
 						spawn(rand(10,30))
-							src << 'sound/weapons/Gunshot.ogg'
+							src << 'sound/weapons/Gunshot2.ogg'
 					if(10) src << 'sound/weapons/smash.ogg'
 					if(11)
 						//Same as above, but with tasers.
@@ -144,7 +144,7 @@ mob/living/carbon/proc/handle_hallucinations()
 						src << pick(creepyasssounds)
 			if(66 to 70)
 				//Flashes of danger
-				//src << "Danger Flash"
+				//to_chat(src, "Danger Flash")
 				if(!halbody)
 					var/list/possible_points = list()
 					for(var/turf/simulated/floor/F in view(src,world.view))
@@ -168,12 +168,12 @@ mob/living/carbon/proc/handle_hallucinations()
 			if(71 to 72)
 				//Fake death
 //				src.sleeping_willingly = 1
-				src.sleeping = 20
+				SetSleeping(20)
 				hal_crit = 1
 				hal_screwyhud = 1
 				spawn(rand(50,100))
 //					src.sleeping_willingly = 0
-					src.sleeping = 0
+					SetSleeping(0)
 					hal_crit = 0
 					hal_screwyhud = 0
 	handling_hal = 0
@@ -189,7 +189,7 @@ mob/living/carbon/proc/handle_hallucinations()
 
 		var/possible_txt = list("Launch Escape Pods","Self-Destruct Sequence","\[Swipe ID\]","De-Monkify",\
 		"Reticulate Splines","Plasma","Open Valve","Lockdown","Nerf Airflow","Kill Traitor","Nihilism",\
-		"OBJECTION!","Arrest Stephen Bowman","Engage Anti-Trenna Defenses","Increase Colony Director IQ","Retrieve Arms",\
+		"OBJECTION!","Arrest Stephen Bowman","Engage Anti-Trenna Defenses","Increase Site Manager IQ","Retrieve Arms",\
 		"Play Charades","Oxygen","Inject BeAcOs","Ninja Lizards","Limit Break","Build Sentry")
 
 		if(mid_txts)
@@ -244,7 +244,7 @@ proc/check_panel(mob/M)
 	attackby(var/obj/item/weapon/P as obj, mob/user as mob)
 		step_away(src,my_target,2)
 		for(var/mob/M in oviewers(world.view,my_target))
-			M << "<font color='red'><B>[my_target] flails around wildly.</B></font>"
+			to_chat(M, "<font color='red'><B>[my_target] flails around wildly.</B></font>")
 		my_target.show_message("<font color='red'><B>[src] has been attacked by [my_target] </B></font>", 1) //Lazy.
 
 		src.health -= P.force
@@ -257,7 +257,7 @@ proc/check_panel(mob/M)
 			step_away(src,my_target,2)
 			if(prob(30))
 				for(var/mob/O in oviewers(world.view , my_target))
-					O << "<font color='red'><B>[my_target] stumbles around.</B></font>"
+					to_chat(O, "<font color='red'><B>[my_target] stumbles around.</B></font>")
 
 	New()
 		..()

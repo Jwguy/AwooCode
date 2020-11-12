@@ -2,15 +2,9 @@
 //SS13 Optimized Map loader
 //////////////////////////////////////////////////////////////
 
-/*
 //global datum that will preload variables on atoms instanciation
 GLOBAL_VAR_INIT(use_preloader, FALSE)
 GLOBAL_DATUM_INIT(_preloader, /dmm_suite/preloader, new)
-*/
-
-//global datum that will preload variables on atoms instanciation
-var/global/dmm_suite/preloader/_preloader = new()
-var/global/use_preloader = FALSE
 
 /dmm_suite
 		// /"([a-zA-Z]+)" = \(((?:.|\n)*?)\)\n(?!\t)|\((\d+),(\d+),(\d+)\) = \{"([a-zA-Z\n]*)"\}/g
@@ -36,6 +30,12 @@ var/global/use_preloader = FALSE
  *
  */
 /dmm_suite/load_map(dmm_file as file, x_offset as num, y_offset as num, z_offset as num, cropMap as num, measureOnly as num, no_changeturf as num, orientation as num)
+	
+	dmmRegex = new/regex({""(\[a-zA-Z]+)" = \\(((?:.|\n)*?)\\)\n(?!\t)|\\((\\d+),(\\d+),(\\d+)\\) = \\{"(\[a-zA-Z\n]*)"\\}"}, "g")
+	trimQuotesRegex = new/regex({"^\[\\s\n]+"?|"?\[\\s\n]+$|^"|"$"}, "g")
+	trimRegex = new/regex("^\[\\s\n]+|\[\\s\n]+$", "g")
+	modelCache = list()
+
 	//How I wish for RAII
 	if(!measureOnly)
 		Master.StartLoadingMap()
@@ -63,9 +63,9 @@ var/global/use_preloader = FALSE
 	if(!z_offset)
 		z_offset = world.maxz + 1
 
-	// If it's not a single dir, default to north (Default orientation)
-	if(!orientation in cardinal)
-		orientation = SOUTH
+	// If it's not a single dir, default to 0 degrees rotation (Default orientation)
+	if(!(orientation in list(0, 90, 180, 270)))
+		orientation = 0
 
 	var/list/bounds = list(1.#INF, 1.#INF, 1.#INF, -1.#INF, -1.#INF, -1.#INF)
 	var/list/grid_models = list()
@@ -109,7 +109,8 @@ var/global/use_preloader = FALSE
 				if(cropMap)
 					continue
 				else
-					world.maxz = zcrd //create a new z_level if needed
+					while(world.maxz < zcrd)
+						world.increment_max_z() // create a new z_level if needed.
 				if(!no_changeturf)
 					WARNING("Z-level expansion occurred without no_changeturf set, this may cause problems")
 
@@ -166,12 +167,12 @@ var/global/use_preloader = FALSE
 				key_list[++key_list.len] = line_keys
 
 			// Rotate the list according to orientation
-			if(orientation != SOUTH)
+			if(orientation != 0)
 				var/num_cols = key_list[1].len
 				var/num_rows = key_list.len
 				var/list/new_key_list = list()
 				// If it's rotated 180 degrees, the dimensions are the same
-				if(orientation == NORTH)
+				if(orientation == 180)
 					new_key_list.len = num_rows
 					for(var/i = 1 to new_key_list.len)
 						new_key_list[i] = list()
@@ -189,11 +190,11 @@ var/global/use_preloader = FALSE
 				for(var/i = 1 to new_key_list.len)
 					for(var/j = 1 to new_key_list[i].len)
 						switch(orientation)
-							if(NORTH)
+							if(180)
 								new_key_list[i][j] = key_list[num_rows - i][num_cols - j]
-							if(EAST)
+							if(270)
 								new_key_list[i][j] = key_list[num_rows - j][i]
-							if(WEST)
+							if(90)
 								new_key_list[i][j] = key_list[j][num_cols - i]
 
 				key_list = new_key_list
@@ -296,6 +297,7 @@ var/global/use_preloader = FALSE
 			old_position = dpos + 1
 
 			if(!atom_def) // Skip the item if the path does not exist.  Fix your crap, mappers!
+				error("Maploader skipping undefined type: '[trim_text(copytext(full_def, 1, variables_start))]' (key=[model_key])")
 				continue
 			members.Add(atom_def)
 
@@ -312,12 +314,6 @@ var/global/use_preloader = FALSE
 						var/value = fields[I]
 						if(istext(value))
 							fields[I] = apply_text_macros(value)
-
-			// Rotate dir if orientation isn't south (default)
-			if(fields["dir"])
-				fields["dir"] = turn(fields["dir"], dir2angle(orientation) + 180)
-			else
-				fields["dir"] = turn(SOUTH, dir2angle(orientation) + 180)
 
 			//then fill the members_attributes list with the corresponding variables
 			members_attributes.len++
@@ -354,9 +350,9 @@ var/global/use_preloader = FALSE
 	index = members.len
 	if(members[index] != /area/template_noop)
 		var/atom/instance
-		_preloader.setup(members_attributes[index])//preloader for assigning  set variables on atom creation
+		GLOB._preloader.setup(members_attributes[index])//preloader for assigning  set variables on atom creation
 		var/atype = members[index]
-		for(var/area/A in all_areas)
+		for(var/area/A in world)
 			if(A.type == atype)
 				instance = A
 				break
@@ -365,8 +361,8 @@ var/global/use_preloader = FALSE
 		if(crds)
 			instance.contents.Add(crds)
 
-		if(use_preloader && instance)
-			_preloader.load(instance)
+		if(GLOB.use_preloader && instance)
+			GLOB._preloader.load(instance)
 
 	//then instance the /turf and, if multiple tiles are presents, simulates the DMM underlays piling effect
 
@@ -379,20 +375,20 @@ var/global/use_preloader = FALSE
 	//instanciate the first /turf
 	var/turf/T
 	if(members[first_turf_index] != /turf/template_noop)
-		T = instance_atom(members[first_turf_index],members_attributes[first_turf_index],crds,no_changeturf)
+		T = instance_atom(members[first_turf_index],members_attributes[first_turf_index],crds,no_changeturf,orientation)
 
 	if(T)
 		//if others /turf are presents, simulates the underlays piling effect
 		index = first_turf_index + 1
 		while(index <= members.len - 1) // Last item is an /area
 			var/underlay = T.appearance
-			T = instance_atom(members[index],members_attributes[index],crds,no_changeturf)//instance new turf
+			T = instance_atom(members[index],members_attributes[index],crds,no_changeturf,orientation)//instance new turf
 			T.underlays += underlay
 			index++
 
 	//finally instance all remainings objects/mobs
 	for(index in 1 to first_turf_index-1)
-		instance_atom(members[index],members_attributes[index],crds,no_changeturf)
+		instance_atom(members[index],members_attributes[index],crds,no_changeturf,orientation)
 	//Restore initialization to the previous value
 	SSatoms.map_loader_stop()
 
@@ -401,8 +397,8 @@ var/global/use_preloader = FALSE
 ////////////////
 
 //Instance an atom at (x,y,z) and gives it the variables in attributes
-/dmm_suite/proc/instance_atom(path,list/attributes, turf/crds, no_changeturf)
-	_preloader.setup(attributes, path)
+/dmm_suite/proc/instance_atom(path,list/attributes, turf/crds, no_changeturf, orientation=0)
+	GLOB._preloader.setup(attributes, path)
 
 	if(crds)
 		if(!no_changeturf && ispath(path, /turf))
@@ -410,14 +406,19 @@ var/global/use_preloader = FALSE
 		else
 			. = create_atom(path, crds)//first preloader pass
 
-	if(use_preloader && .)//second preloader pass, for those atoms that don't ..() in New()
-		_preloader.load(.)
+	if(GLOB.use_preloader && .)//second preloader pass, for those atoms that don't ..() in New()
+		GLOB._preloader.load(.)
 
 	//custom CHECK_TICK here because we don't want things created while we're sleeping to not initialize
 	if(TICK_CHECK)
 		SSatoms.map_loader_stop()
 		stoplag()
 		SSatoms.map_loader_begin()
+
+	// Rotate the atom now that it exists, rather than changing its orientation beforehand through the fields["dir"]
+	if(orientation != 0) // 0 means no rotation
+		var/atom/A = .
+		A.set_dir(turn(A.dir, orientation))
 
 /dmm_suite/proc/create_atom(path, crds)
 	set waitfor = FALSE
@@ -529,7 +530,7 @@ var/global/use_preloader = FALSE
 
 /dmm_suite/preloader/proc/setup(list/the_attributes, path)
 	if(the_attributes.len)
-		use_preloader = TRUE
+		GLOB.use_preloader = TRUE
 		attributes = the_attributes
 		target_path = path
 
@@ -539,7 +540,7 @@ var/global/use_preloader = FALSE
 		if(islist(value))
 			value = deepCopyList(value)
 		what.vars[attribute] = value
-	use_preloader = FALSE
+	GLOB.use_preloader = FALSE
 
 /area/template_noop
 	name = "Area Passthrough"

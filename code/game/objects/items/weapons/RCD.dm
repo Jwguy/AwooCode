@@ -5,7 +5,9 @@
 	icon = 'icons/obj/tools.dmi'
 	icon_state = "rcd"
 	item_state = "rcd"
-	flags = CONDUCT | NOBLUDGEON
+	drop_sound = 'sound/items/drop/gun.ogg'
+	pickup_sound = 'sound/items/pickup/gun.ogg'
+	flags = NOBLUDGEON
 	force = 10
 	throwforce = 10
 	throw_speed = 1
@@ -27,27 +29,29 @@
 	var/window_type = /obj/structure/window/reinforced/full
 	var/material_to_use = DEFAULT_WALL_MATERIAL // So badmins can make RCDs that print diamond walls.
 	var/make_rwalls = FALSE // If true, when building walls, they will be reinforced.
-
-/obj/item/weapon/rcd/initialize()
+/* VOREStation Removal - Unused
+/obj/item/weapon/rcd/Initialize()
+	
 	src.spark_system = new /datum/effect/effect/system/spark_spread
 	spark_system.set_up(5, 0, src)
 	spark_system.attach(src)
 	return ..()
-
+*/
 /obj/item/weapon/rcd/Destroy()
 	QDEL_NULL(spark_system)
 	spark_system = null
 	return ..()
 
 /obj/item/weapon/rcd/examine(mob/user)
-	..()
-	to_chat(user, display_resources())
+	. = ..()
+	. += display_resources()
 
 // Used to show how much stuff (matter units, cell charge, etc) is left inside.
 /obj/item/weapon/rcd/proc/display_resources()
 	return "It currently holds [stored_matter]/[max_stored_matter] matter-units."
 
 // Used to add new cartridges.
+/* VOREStation Tweak - Wow this is annoying, moved to _vr file for overhaul
 /obj/item/weapon/rcd/attackby(obj/item/weapon/W, mob/user)
 	if(istype(W, /obj/item/weapon/rcd_ammo))
 		var/obj/item/weapon/rcd_ammo/cartridge = W
@@ -57,24 +61,25 @@
 		stored_matter += cartridge.remaining
 		user.drop_from_inventory(W)
 		qdel(W)
-		playsound(src.loc, 'sound/machines/click.ogg', 50, 1)
+		playsound(src, 'sound/machines/click.ogg', 50, 1)
 		to_chat(user, span("notice", "The RCD now holds [stored_matter]/[max_stored_matter] matter-units."))
 		return TRUE
 	return ..()
-
+*/
 // Changes which mode it is on.
 /obj/item/weapon/rcd/attack_self(mob/living/user)
+/* VOREStation Removal - Moved to VR
 	if(mode_index >= modes.len) // Shouldn't overflow unless someone messes with it in VV poorly but better safe than sorry.
 		mode_index = 1
 	else
 		mode_index++
 
 	to_chat(user, span("notice", "Changed mode to '[modes[mode_index]]'."))
-	playsound(src.loc, 'sound/effects/pop.ogg', 50, 0)
+	playsound(src, 'sound/effects/pop.ogg', 50, 0)
 
 	if(prob(20))
 		src.spark_system.start()
-
+*/
 // Removes resources if the RCD can afford it.
 /obj/item/weapon/rcd/proc/consume_resources(amount)
 	if(!can_afford(amount))
@@ -106,7 +111,7 @@
 		to_chat(user, span("warning", "\The [src] lacks the required material to start."))
 		return FALSE
 
-	playsound(get_turf(src), 'sound/machines/click.ogg', 50, 1)
+	playsound(src, 'sound/machines/click.ogg', 50, 1)
 
 	var/true_delay = rcd_results[RCD_VALUE_DELAY] * toolspeed
 
@@ -118,6 +123,7 @@
 		rcd_beam = beam_origin.Beam(A, icon_state = "rped_upgrade", time = max(true_delay, 5))
 	busy = TRUE
 
+	perform_effect(A, true_delay) //VOREStation Add
 	if(do_after(user, true_delay, target = A))
 		busy = FALSE
 		// Doing another check in case we lost matter during the delay for whatever reason.
@@ -126,7 +132,7 @@
 			return FALSE
 		if(A.rcd_act(user, src, rcd_results[RCD_VALUE_MODE]))
 			consume_resources(rcd_results[RCD_VALUE_COST])
-			playsound(get_turf(A), 'sound/items/deconstruct.ogg', 50, 1)
+			playsound(A, 'sound/items/deconstruct.ogg', 50, 1)
 			return TRUE
 
 	// If they moved, kill the beam immediately.
@@ -137,7 +143,7 @@
 // RCD variants.
 
 // This one starts full.
-/obj/item/weapon/rcd/loaded/initialize()
+/obj/item/weapon/rcd/loaded/Initialize()
 	stored_matter = max_stored_matter
 	return ..()
 
@@ -148,7 +154,7 @@
 	used in the construction of hulls for starships. Reload with compressed matter cartridges."
 	material_to_use = MAT_STEELHULL
 
-/obj/item/weapon/rcd/shipwright/loaded/initialize()
+/obj/item/weapon/rcd/shipwright/loaded/Initialize()
 	stored_matter = max_stored_matter
 	return ..()
 
@@ -162,7 +168,7 @@
 	toolspeed = 0.5 // Twice as fast.
 	max_stored_matter = RCD_MAX_CAPACITY * 3 // Three times capacity.
 
-/obj/item/weapon/rcd/advanced/loaded/initialize()
+/obj/item/weapon/rcd/advanced/loaded/Initialize()
 	stored_matter = max_stored_matter
 	return ..()
 
@@ -179,7 +185,7 @@
 	var/make_cell = TRUE // If false, initialize() won't spawn a cell for this.
 	var/electric_cost_coefficent = 83.33 // Higher numbers make it less efficent. 86.3... means it should matche the standard RCD capacity on a 10k cell.
 
-/obj/item/weapon/rcd/electric/initialize()
+/obj/item/weapon/rcd/electric/Initialize()
 	if(make_cell)
 		cell = new /obj/item/weapon/cell/high(src)
 	return ..()
@@ -242,6 +248,13 @@
 	desc = "A device used to rapidly build and deconstruct. It runs directly off of electricity, drawing directly from your cell."
 	electric_cost_coefficent = 41.66 // Twice as efficent, out of pity.
 	toolspeed = 0.5 // Twice as fast, since borg versions typically have this.
+
+/obj/item/weapon/rcd/electric/mounted/borg/swarm
+	can_remove_rwalls = FALSE
+	name = "Rapid Assimilation Device"
+	ranged = TRUE
+	toolspeed = 0.7
+	material_to_use = MAT_STEELHULL
 
 /obj/item/weapon/rcd/electric/mounted/borg/lesser
 	can_remove_rwalls = FALSE

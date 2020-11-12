@@ -12,10 +12,11 @@
 /obj/item/weapon/spell/projectile/on_ranged_cast(atom/hit_atom, mob/living/user)
 	if(set_up(hit_atom, user))
 		var/obj/item/projectile/new_projectile = make_projectile(spell_projectile, user)
-		new_projectile.launch(hit_atom)
+		new_projectile.old_style_target(hit_atom)
+		new_projectile.fire()
 		log_and_message_admins("has casted [src] at \the [hit_atom].")
 		if(fire_sound)
-			playsound(get_turf(src), fire_sound, 75, 1)
+			playsound(src, fire_sound, 75, 1)
 		adjust_instability(instability_per_shot)
 		return 1
 	return 0

@@ -17,7 +17,7 @@
 	var/epitaph = ""		//A quick little blurb
 //	var/dir_locked = 0		//Can it be spun?	Not currently implemented
 
-	var/material/material
+	var/datum/material/material
 
 /obj/structure/gravemarker/New(var/newloc, var/material_name)
 	..(newloc)
@@ -30,23 +30,18 @@
 	color = material.icon_colour
 
 /obj/structure/gravemarker/examine(mob/user)
-	..()
-	if(get_dist(src, user) < 4)
-		if(grave_name)
-			to_chat(user, "Here Lies [grave_name]")
-	if(get_dist(src, user) < 2)
-		if(epitaph)
-			to_chat(user, epitaph)
+	. = ..()
+	if(grave_name && get_dist(src, user) < 4)
+		. += "Here Lies [grave_name]"
+	if(epitaph && get_dist(src, user) < 2)
+		. += epitaph
 
-/obj/structure/gravemarker/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-	if(!mover)
-		return 1
+/obj/structure/gravemarker/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))
-		return 1
+		return TRUE
 	if(get_dir(loc, target) & dir)
 		return !density
-	else
-		return 1
+	return TRUE
 
 /obj/structure/gravemarker/CheckExit(atom/movable/O as mob|obj, target as turf)
 	if(istype(O) && O.checkpass(PASSTABLE))
@@ -115,23 +110,20 @@
 	return
 
 
-/obj/structure/gravemarker/verb/rotate()
-	set name = "Rotate Grave Marker"
+/obj/structure/gravemarker/verb/rotate_clockwise()
+	set name = "Rotate Grave Marker Clockwise"
 	set category = "Object"
 	set src in oview(1)
 
 	if(anchored)
 		return
-	if(config.ghost_interaction)
-		src.set_dir(turn(src.dir, 90))
-		return
-	else
-		if(istype(usr,/mob/living/simple_animal/mouse))
-			return
-		if(!usr || !isturf(usr.loc))
-			return
-		if(usr.stat || usr.restrained())
-			return
 
-		src.set_dir(turn(src.dir, 90))
+	if(!usr || !isturf(usr.loc))
 		return
+	if(usr.stat || usr.restrained())
+		return
+	if(ismouse(usr) || (isobserver(usr) && !config.ghost_interaction))
+		return
+
+	src.set_dir(turn(src.dir, 270))
+	return

@@ -1,7 +1,7 @@
 /obj/machinery/mining
 	icon = 'icons/obj/mining_drill.dmi'
 	anchored = 0
-	use_power = 0 //The drill takes power directly from a cell.
+	use_power = USE_POWER_OFF //The drill takes power directly from a cell.
 	density = 1
 	layer = MOB_LAYER+0.1 //So it draws over mobs in the tile north of it.
 
@@ -17,7 +17,7 @@
 	var/list/resource_field = list()
 	var/obj/item/device/radio/intercom/faultreporter = new /obj/item/device/radio/intercom{channels=list("Supply")}(null)
 
-	var/ore_types = list(
+	var/list/ore_types = list(
 		"hematite" = /obj/item/weapon/ore/iron,
 		"uranium" = /obj/item/weapon/ore/uranium,
 		"gold" = /obj/item/weapon/ore/gold,
@@ -34,22 +34,36 @@
 	var/harvest_speed
 	var/capacity
 	var/charge_use
+	var/exotic_drilling
 	var/obj/item/weapon/cell/cell = null
+
+	// Found with an advanced laser. exotic_drilling >= 1
+	var/list/ore_types_uncommon = list(
+		MAT_MARBLE = /obj/item/weapon/ore/marble,
+		MAT_LEAD = /obj/item/weapon/ore/lead
+		)
+
+	// Found with an ultra laser. exotic_drilling >= 2
+	var/list/ore_types_rare = list(
+		MAT_VERDANTIUM = /obj/item/weapon/ore/verdantium
+		)
 
 	//Flags
 	var/need_update_field = 0
 	var/need_player_check = 0
 
-/obj/machinery/mining/drill/New()
+/obj/machinery/mining/drill/Initialize()
+	. = ..()
+	if(ispath(cell))
+		cell = new cell(src)
+	default_apply_parts()
+	cell = default_use_hicell()
 
-	..()
-	component_parts = list()
-	component_parts += new /obj/item/weapon/stock_parts/matter_bin(src)
-	component_parts += new /obj/item/weapon/stock_parts/capacitor(src)
-	component_parts += new /obj/item/weapon/stock_parts/micro_laser(src)
-	component_parts += new /obj/item/weapon/cell/high(src)
+/obj/machinery/mining/drill/get_cell()
+	return cell	
 
-	RefreshParts()
+/obj/machinery/mining/drill/loaded
+	cell = /obj/item/weapon/cell/high
 
 /obj/machinery/mining/drill/process()
 
@@ -127,7 +141,7 @@
 					var/oretype = ore_types[metal]
 					new oretype(src)
 
-		if(!found_resource)
+		if(!found_resource)	// If a drill can't see an advanced material, it will destroy it while going through.
 			harvesting.has_resources = 0
 			harvesting.resources = null
 			resource_field -= harvesting
@@ -161,7 +175,7 @@
 			to_chat(user, "The drill already has a cell installed.")
 		else
 			user.drop_item()
-			O.loc = src
+			O.forceMove(src)
 			cell = O
 			component_parts += O
 			to_chat(user, "You install \the [O].")
@@ -173,7 +187,7 @@
 
 	if (panel_open && cell && user.Adjacent(src))
 		to_chat(user, "You take out \the [cell].")
-		cell.loc = get_turf(user)
+		cell.forceMove(get_turf(user))
 		component_parts -= cell
 		cell = null
 		return
@@ -219,11 +233,19 @@
 	for(var/obj/item/weapon/stock_parts/P in component_parts)
 		if(istype(P, /obj/item/weapon/stock_parts/micro_laser))
 			harvest_speed = P.rating
+			exotic_drilling = P.rating - 1
+			if(exotic_drilling >= 1)
+				ore_types |= ore_types_uncommon
+				if(exotic_drilling >= 2)
+					ore_types |= ore_types_rare
+			else
+				ore_types -= ore_types_uncommon
+				ore_types -= ore_types_rare
 		if(istype(P, /obj/item/weapon/stock_parts/matter_bin))
 			capacity = 200 * P.rating
 		if(istype(P, /obj/item/weapon/stock_parts/capacitor))
 			charge_use -= 10 * P.rating
-	cell = locate(/obj/item/weapon/cell) in component_parts
+	cell = locate(/obj/item/weapon/cell) in src
 
 /obj/machinery/mining/drill/proc/check_supports()
 
@@ -298,13 +320,13 @@
 	name = "mining drill brace"
 	desc = "A machinery brace for an industrial drill. It looks easily two feet thick."
 	icon_state = "mining_brace"
+	circuit = /obj/item/weapon/circuitboard/miningdrillbrace
 	var/obj/machinery/mining/drill/connected
 
 /obj/machinery/mining/brace/New()
 	..()
 
 	component_parts = list()
-	component_parts += new /obj/item/weapon/circuitboard/miningdrillbrace(src)
 
 /obj/machinery/mining/brace/attackby(obj/item/weapon/W as obj, mob/user as mob)
 	if(connected && connected.active)
@@ -363,8 +385,8 @@
 	connected.check_supports()
 	connected = null
 
-/obj/machinery/mining/brace/verb/rotate()
-	set name = "Rotate"
+/obj/machinery/mining/brace/verb/rotate_clockwise()
+	set name = "Rotate Brace Clockwise"
 	set category = "Object"
 	set src in oview(1)
 
@@ -374,5 +396,5 @@
 		to_chat(usr, "It is anchored in place!")
 		return 0
 
-	src.set_dir(turn(src.dir, 90))
+	src.set_dir(turn(src.dir, 270))
 	return 1

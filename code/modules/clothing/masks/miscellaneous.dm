@@ -47,13 +47,13 @@
 			body_parts_covered = body_parts_covered & ~FACE
 			armor = list(melee = 0, bullet = 0, laser = 0, energy = 0, bomb = 0, bio = 0, rad = 0)
 			icon_state = "steriledown"
-			usr << "You pull the mask below your chin."
+			to_chat(usr, "You pull the mask below your chin.")
 		else
 			gas_transfer_coefficient = initial(gas_transfer_coefficient)
 			body_parts_covered = initial(body_parts_covered)
 			icon_state = initial(icon_state)
 			armor = initial(armor)
-			usr << "You pull the mask up to cover your face."
+			to_chat(usr, "You pull the mask up to cover your face.")
 		update_clothing_icon()
 
 /obj/item/clothing/mask/surgical/verb/toggle()
@@ -170,6 +170,34 @@
 	w_class = ITEMSIZE_SMALL
 	siemens_coefficient = 0.9
 
+/obj/item/clothing/mask/nock_scarab
+	name = "nock mask (blue, scarab)"
+	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
+	icon_state = "nock_scarab"
+	w_class = ITEMSIZE_SMALL
+	body_parts_covered = HEAD|FACE
+
+/obj/item/clothing/mask/nock_demon
+	name = "nock mask (purple, demon)"
+	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
+	icon_state = "nock_demon"
+	w_class = ITEMSIZE_SMALL
+	body_parts_covered = HEAD|FACE
+
+/obj/item/clothing/mask/nock_life
+	name = "nock mask (green, life)"
+	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
+	icon_state = "nock_life"
+	w_class = ITEMSIZE_SMALL
+	body_parts_covered = HEAD|FACE
+
+/obj/item/clothing/mask/nock_ornate
+	name = "nock mask (red, ornate)"
+	desc = "To Nock followers, masks symbolize rebirth and a new persona. Damaging the wearer's mask is generally considered an attack on their person itself."
+	icon_state = "nock_ornate"
+	w_class = ITEMSIZE_SMALL
+	body_parts_covered = HEAD|FACE
+
 /obj/item/clothing/mask/horsehead/New()
     ..()
     // The horse mask doesn't cause voice changes by default, the wizard spell changes the flag as necessary
@@ -260,3 +288,10 @@
 	desc = "A fine black bandana with nanotech lining and a skull emblem. Can be worn on the head or face."
 	icon_state = "bandskull"
 	item_state_slots = list(slot_r_hand_str = "bandskull", slot_l_hand_str = "bandskull")
+
+/obj/item/clothing/mask/veil
+	name = "black veil"
+	desc = "A black veil, typically worn at funerals or by goths."
+	w_class = ITEMSIZE_TINY
+	body_parts_covered = FACE
+	icon_state = "veil"

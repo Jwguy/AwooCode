@@ -4,6 +4,7 @@
 	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "doorctrl0"
 	power_channel = ENVIRON
+	layer = ABOVE_WINDOW_LAYER
 	var/desiredstate = 0
 	var/exposedwires = 0
 	var/wires = 3
@@ -13,7 +14,7 @@
 	*/
 
 	anchored = 1.0
-	use_power = 1
+	use_power = USE_POWER_IDLE
 	idle_power_usage = 2
 	active_power_usage = 4
 
@@ -30,7 +31,7 @@
 	if(req_access.len || req_one_access.len)
 		req_access = list()
 		req_one_access = list()
-		playsound(src.loc, "sparks", 100, 1)
+		playsound(src, "sparks", 100, 1)
 		return 1
 
 /obj/machinery/button/remote/attack_hand(mob/user as mob)
@@ -205,3 +206,18 @@
 		icon_state = "launcherbtt"
 	else
 		icon_state = "launcheract"
+
+/*
+	Shieldgen remote control
+*/
+/obj/machinery/button/remote/shields
+	name = "remote shield control"
+	desc = "It controls shields, remotely."
+	icon = 'icons/obj/stationobjs_vr.dmi' // VOREStation Edit
+
+/obj/machinery/button/remote/shields/trigger(var/mob/user)
+	for(var/obj/machinery/shield_gen/SG in machines)
+		if(SG.id == id)
+			spawn(0)
+				if(SG?.anchored)
+					SG.toggle()

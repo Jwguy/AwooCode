@@ -19,7 +19,7 @@ var/global/ingredientLimit = 20
 	var/image/topping
 	var/image/filling
 
-/obj/item/weapon/reagent_containers/food/snacks/customizable/New(loc,ingredient)
+/obj/item/weapon/reagent_containers/food/snacks/customizable/Initialize(loc,ingredient)
 	. = ..()
 	topping = image(icon,,"[initial(icon_state)]_top")
 	filling = image(icon,,"[initial(icon_state)]_filling")
@@ -44,14 +44,14 @@ var/global/ingredientLimit = 20
 			to_chat(user, "<span class='warning'>As uniquely original as that idea is, you can't figure out how to perform it.</span>")
 			return
 		/*if(!user.drop_item())
-			user << "<span class='warning'>\The [I] is stuck to your hands!</span>"
+			to_chat(user, "<span class='warning'>\The [I] is stuck to your hands!</span>")
 			return*/
 		user.drop_item()
 		I.forceMove(src)
-		
+
 		if(S.reagents)
 			S.reagents.trans_to(src,S.reagents.total_volume)
-		
+
 		ingredients += S
 
 		if(src.addTop)
@@ -123,7 +123,7 @@ var/global/ingredientLimit = 20
 	return new_name
 
 /obj/item/weapon/reagent_containers/food/snacks/customizable/Destroy()
-	QDEL_NULL_LIST(ingredients)
+	QDEL_LIST_NULL(ingredients)
 	return ..()
 
 /obj/item/weapon/reagent_containers/food/snacks/customizable/proc/drawTopping()

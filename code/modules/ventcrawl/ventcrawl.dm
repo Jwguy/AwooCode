@@ -9,14 +9,16 @@ var/list/ventcrawl_machinery = list(
 	/obj/item/device/radio/borg,
 	/obj/item/weapon/holder,
 	/obj/machinery/camera,
-	/mob/living/simple_animal/borer,
-	/obj/belly, //VOREStation Edit,
+	/obj/belly,
 	/obj/screen
 	)
+	//VOREStation Edit : added /obj/belly, to this list, travis is complaining about this in his indentation check
+	//mob/living/simple_mob/borer, //VORESTATION AI TEMPORARY REMOVAL REPLACE BACK IN LIST WHEN RESOLVED //VOREStation Edit
 
 /mob/living/var/list/icon/pipes_shown = list()
 /mob/living/var/last_played_vent
 /mob/living/var/is_ventcrawling = 0
+/mob/living/var/prepping_to_ventcrawl = 0
 /mob/var/next_play_vent = 0
 
 /mob/living/proc/can_ventcrawl()
@@ -25,8 +27,14 @@ var/list/ventcrawl_machinery = list(
 	if(!(/mob/living/proc/ventcrawl in verbs))
 		to_chat(src, "<span class='warning'>You don't possess the ability to ventcrawl!</span>")
 		return FALSE
+	if(pulling)
+		to_chat(src, "<span class='warning'>You cannot bring \the [pulling] into the vent with you!</span>")
+		return FALSE
 	if(incapacitated())
 		to_chat(src, "<span class='warning'>You cannot ventcrawl in your current state!</span>")
+		return FALSE
+	if(buckled)
+		to_chat(src, "<span class='warning'>You cannot ventcrawl while buckled!</span>")
 		return FALSE
 	return ventcrawl_carry()
 
@@ -38,7 +46,7 @@ var/list/ventcrawl_machinery = list(
 		add_ventcrawl(loc)
 		client.screen += global_hud.centermarker
 
-/mob/living/simple_animal/slime/can_ventcrawl()
+/mob/living/simple_mob/slime/xenobio/can_ventcrawl()
 	if(victim)
 		to_chat(src, "<span class='warning'>You cannot ventcrawl while feeding.</span>")
 		return FALSE
@@ -67,11 +75,6 @@ var/list/ventcrawl_machinery = list(
 
 /mob/living/carbon/human/is_allowed_vent_crawl_item(var/obj/item/carried_item)
 	if(carried_item in organs)
-		return 1
-	return ..()
-
-/mob/living/simple_animal/spiderbot/is_allowed_vent_crawl_item(var/obj/item/carried_item)
-	if(carried_item == held_item)
 		return 1
 	return ..()
 
@@ -110,7 +113,7 @@ var/list/ventcrawl_machinery = list(
 /mob/living/var/ventcrawl_layer = 3
 
 /mob/living/proc/handle_ventcrawl(var/atom/clicked_on)
-	if(!can_ventcrawl())
+	if(!can_ventcrawl() || prepping_to_ventcrawl)
 		return
 
 	var/obj/machinery/atmospherics/unary/vent_found
@@ -157,6 +160,9 @@ var/list/ventcrawl_machinery = list(
 						to_chat(src, "<span class='danger'>You feel a roaring wind pushing you away from the vent!</span>")
 
 			fade_towards(vent_found,45)
+			prepping_to_ventcrawl = 1
+			spawn(50)
+				prepping_to_ventcrawl = 0
 			if(!do_after(src, 45, vent_found, 1, 1))
 				return
 			if(!can_ventcrawl())

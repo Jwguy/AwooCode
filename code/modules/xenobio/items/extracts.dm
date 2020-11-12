@@ -33,11 +33,11 @@
 	..()
 
 /obj/item/slime_extract/examine(mob/user)
-	..()
+	. = ..()
 	if(uses)
-		to_chat(user, "This extract has [uses] more use\s.")
+		. += "This extract has [uses] more use\s."
 	else
-		to_chat(user, "This extract is inert.")
+		. += "This extract is inert."
 
 /datum/chemical_reaction/slime
 	var/required = null
@@ -53,7 +53,7 @@
 	var/obj/item/slime_extract/T = holder.my_atom
 	T.uses--
 	if(T.uses <= 0)
-		T.visible_message("\icon[T]<span class='notice'>\The [T] goes inert.</span>")
+		T.visible_message("[bicon(T)]<span class='notice'>\The [T] goes inert.</span>")
 		T.name = "inert [initial(T.name)]"
 
 
@@ -77,7 +77,7 @@
 
 /datum/chemical_reaction/slime/grey_new_slime/on_reaction(var/datum/reagents/holder)
 	holder.my_atom.visible_message("<span class='warning'>Infused with phoron, the core begins to quiver and grow, and soon a new baby slime emerges from it!</span>")
-	new /mob/living/simple_animal/slime(get_turf(holder.my_atom))
+	new /mob/living/simple_mob/slime/xenobio(get_turf(holder.my_atom))
 	..()
 
 /datum/chemical_reaction/slime/grey_monkey
@@ -323,7 +323,7 @@
 /datum/chemical_reaction/slime/orange_fire/on_reaction(var/datum/reagents/holder)
 	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.fingerprintslast]")
 	holder.my_atom.visible_message("<span class='danger'>\The [src] begins to vibrate violently!</span>")
-	playsound(get_turf(holder.my_atom), 'sound/effects/phasein.ogg', 75, 1)
+	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	spawn(5 SECONDS)
 		if(holder && holder.my_atom)
 			var/turf/simulated/T = get_turf(holder.my_atom)
@@ -360,11 +360,11 @@
 /datum/chemical_reaction/slime/yellow_emp/on_reaction(var/datum/reagents/holder)
 	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.fingerprintslast]")
 	holder.my_atom.visible_message("<span class='danger'>\The [src] begins to vibrate violently!</span>")
-	playsound(get_turf(holder.my_atom), 'sound/effects/phasein.ogg', 75, 1)
+	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	spawn(5 SECONDS)
 		if(holder && holder.my_atom)
 			empulse(get_turf(holder.my_atom), 2, 4, 7, 10) // As strong as a normal EMP grenade.
-			playsound(get_turf(holder.my_atom), 'sound/effects/phasein.ogg', 75, 1)
+			playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	..()
 
 
@@ -495,16 +495,16 @@
 		if(!(their_turf in Z.contents)) // Not in the same zone.
 			continue
 
-		if(istype(L, /mob/living/simple_animal/slime))
-			var/mob/living/simple_animal/slime/S = L
-			if(S.cold_damage_per_tick <= 0) // Immune to cold.
+		if(istype(L, /mob/living/simple_mob/slime))
+			var/mob/living/simple_mob/slime/S = L
+			if(S.cold_resist >= 1) // Immune to cold.
 				to_chat(S, "<span class='warning'>A chill is felt around you, however it cannot harm you.</span>")
 				continue
 			if(S.client) // Don't instantly kill player slimes.
 				to_chat(S, "<span class='danger'>You feel your body crystalize as an intense chill overwhelms you!</span>")
-				S.adjustToxLoss(S.cold_damage_per_tick * 2)
+				S.inflict_cold_damage(100)
 			else
-				S.adjustToxLoss(S.cold_damage_per_tick * 5) // Metal slimes can survive this 'slime nuke'.
+				S.inflict_cold_damage(200) // Metal slimes can survive this 'slime nuke'.
 			continue
 
 		if(ishuman(L))
@@ -552,17 +552,21 @@
 	required = /obj/item/slime_extract/red
 
 /datum/chemical_reaction/slime/red_enrage/on_reaction(var/datum/reagents/holder)
-	for(var/mob/living/simple_animal/slime/S in view(get_turf(holder.my_atom)))
-		if(S.stat || S.docile || S.rabid)
+	for(var/mob/living/simple_mob/slime/S in view(get_turf(holder.my_atom)))
+		if(S.stat)
 			continue
+
+		if(istype(S, /mob/living/simple_mob/slime/xenobio))
+			var/mob/living/simple_mob/slime/xenobio/X = S
+			if(X.harmless)
+				continue
+			if(!X.client)
+				X.enrage()
 
 		S.add_modifier(/datum/modifier/berserk, 30 SECONDS)
 
 		if(S.client) // Player slimes always have free will.
 			to_chat(S, "<span class='warning'>An intense wave of rage is felt from inside, but you remain in control of yourself.</span>")
-			continue
-
-		S.enrage()
 
 	for(var/mob/living/carbon/human/H in view(get_turf(holder.my_atom)))
 		if(H.species.name == SPECIES_PROMETHEAN)
@@ -571,7 +575,7 @@
 
 	log_and_message_admins("Red extract reaction (enrage) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.fingerprintslast]")
 
-	playsound(get_turf(holder.my_atom), 'sound/effects/phasein.ogg', 75, 1)
+	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	..()
 
 
@@ -612,7 +616,7 @@
 /obj/item/slime_extract/pink
 	name = "pink slime extract"
 	icon_state = "pink slime extract"
-	description_info = "This extract will create 20u of blood clotting agent if injected with blood.  It can also create 20u of bone binding agent if injected \
+	description_info = "This extract will create 30u of blood clotting agent if injected with blood.  It can also create 30u of bone binding agent if injected \
 	with phoron.  When injected with water, it will create an organ-mending agent.  The slime medications have a very low threshold for overdosage, however."
 
 
@@ -692,7 +696,7 @@
 		power++
 	E.uses = 0
 
-	playsound(get_turf(holder.my_atom), 'sound/effects/phasein.ogg', 75, 1)
+	playsound(holder.my_atom, 'sound/effects/phasein.ogg', 75, 1)
 	holder.my_atom.visible_message("<span class='danger'>\The [holder.my_atom] begins to vibrate violently!</span>")
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.fingerprintslast]")
 
@@ -957,8 +961,8 @@
 
 
 /datum/chemical_reaction/slime/rainbow_random_slime/on_reaction(var/datum/reagents/holder)
-	var/mob/living/simple_animal/slime/S
-	var/list/slime_types = typesof(/mob/living/simple_animal/slime)
+	var/mob/living/simple_mob/slime/xenobio/S
+	var/list/slime_types = typesof(/mob/living/simple_mob/slime/xenobio)
 
 	while(slime_types.len)
 		S = pick(slime_types)

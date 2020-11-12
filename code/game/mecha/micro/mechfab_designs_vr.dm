@@ -1,5 +1,5 @@
 /datum/design/item/mechfab/gopher
-	category = "Gopher"
+	category = list("Gopher")
 	time = 5
 
 /datum/design/item/mechfab/gopher/chassis
@@ -55,7 +55,7 @@
 	materials = list(DEFAULT_WALL_MATERIAL = 2500)
 
 /datum/design/item/mechfab/polecat
-	category = "Polecat"
+	category = list("Polecat")
 	time = 10
 
 /datum/design/item/mechfab/polecat/chassis
@@ -134,7 +134,7 @@
 	build_path = /obj/item/mecha_parts/mecha_equipment/weapon/ballistic/microshotgun
 
 /datum/design/item/mechfab/weasel
-	category = "Weasel"
+	category = list("Weasel")
 	time = 5
 
 /datum/design/item/mechfab/weasel/chassis
@@ -185,3 +185,11 @@
 	id = "weasel_head"
 	build_path = /obj/item/mecha_parts/micro/part/weasel_head
 	materials = list(DEFAULT_WALL_MATERIAL = 7000, "glass" = 2500)
+
+/datum/design/item/mecha/medigun
+	name = "BL-3/P directed restoration system"
+	desc = "A portable medical system used to treat external injuries from afar."
+	id = "mech_medigun"
+	req_tech = list(TECH_MATERIAL = 5, TECH_COMBAT = 5, TECH_BIO = 6)
+	materials = list(DEFAULT_WALL_MATERIAL = 8000, "gold" = 2000, "silver" = 1750, "diamond" = 1500, "phoron" = 4000)
+	build_path = /obj/item/mecha_parts/mecha_equipment/weapon/energy/medigun

@@ -29,70 +29,78 @@
 	else
 		icon_state = "floorbot[on]e"
 
-/mob/living/bot/floorbot/attack_hand(var/mob/user)
-	user.set_machine(src)
-	var/list/dat = list()
-	dat += "<TT><B>Automatic Station Floor Repairer v1.0</B></TT><BR><BR>"
-	dat += "Status: <A href='?src=\ref[src];operation=start'>[src.on ? "On" : "Off"]</A><BR>"
-	dat += "Maintenance panel is [open ? "opened" : "closed"]<BR>"
-	dat += "Tiles left: [amount]<BR>"
-	dat += "Behvaiour controls are [locked ? "locked" : "unlocked"]<BR>"
+/mob/living/bot/floorbot/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "Floorbot", name)
+		ui.open()
+
+/mob/living/bot/floorbot/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = ..()
+
+	data["on"] = on
+	data["open"] = open
+	data["locked"] = locked
+
+	data["amount"] = amount
+
+	data["possible_bmode"] = list("NORTH", "EAST", "SOUTH", "WEST")
+
+	data["improvefloors"] = null
+	data["eattiles"] = null
+	data["maketiles"] = null
+	data["bmode"] = null
+
 	if(!locked || issilicon(user))
-		dat += "Improves floors: <A href='?src=\ref[src];operation=improve'>[improvefloors ? "Yes" : "No"]</A><BR>"
-		dat += "Finds tiles: <A href='?src=\ref[src];operation=tiles'>[eattiles ? "Yes" : "No"]</A><BR>"
-		dat += "Make singles pieces of metal into tiles when empty: <A href='?src=\ref[src];operation=make'>[maketiles ? "Yes" : "No"]</A><BR>"
-		var/bmode
-		if(targetdirection)
-			bmode = dir2text(targetdirection)
-		else
-			bmode = "Disabled"
-		dat += "<BR><BR>Bridge Mode : <A href='?src=\ref[src];operation=bridgemode'>[bmode]</A><BR>"
-	var/datum/browser/popup = new(user, "autorepair", "Repairbot v1.1 controls")
-	popup.set_content(jointext(dat,null))
-	popup.open()
-	return
+		data["improvefloors"] = improvefloors
+		data["eattiles"] = eattiles
+		data["maketiles"] = maketiles
+		data["bmode"] = dir2text(targetdirection)
+
+	return data
+
+/mob/living/bot/floorbot/attack_hand(var/mob/user)
+	tgui_interact(user)
 
 /mob/living/bot/floorbot/emag_act(var/remaining_charges, var/mob/user)
 	. = ..()
 	if(!emagged)
 		emagged = 1
 		if(user)
-			user << "<span class='notice'>The [src] buzzes and beeps.</span>"
-			playsound(src.loc, 'sound/machines/buzzbeep.ogg', 50, 0)
+			to_chat(user, "<span class='notice'>The [src] buzzes and beeps.</span>")
+			playsound(src, 'sound/machines/buzzbeep.ogg', 50, 0)
 		return 1
 
-/mob/living/bot/floorbot/Topic(href, href_list)
+/mob/living/bot/floorbot/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
-		return
-	usr.set_machine(src)
+		return TRUE
+
 	add_fingerprint(usr)
-	switch(href_list["operation"])
+
+	switch(action)
 		if("start")
-			if (on)
+			if(on)
 				turn_off()
 			else
 				turn_on()
+			. = TRUE
+
+	if(locked && !issilicon(usr))
+		return
+
+	switch(action)
 		if("improve")
 			improvefloors = !improvefloors
+			. = TRUE
 		if("tiles")
 			eattiles = !eattiles
+			. = TRUE
 		if("make")
 			maketiles = !maketiles
+			. = TRUE
 		if("bridgemode")
-			switch(targetdirection)
-				if(null)
-					targetdirection = 1
-				if(1)
-					targetdirection = 2
-				if(2)
-					targetdirection = 4
-				if(4)
-					targetdirection = 8
-				if(8)
-					targetdirection = null
-				else
-					targetdirection = null
-	attack_hand(usr)
+			targetdirection = text2dir(params["dir"])
+			. = TRUE
 
 /mob/living/bot/floorbot/handleRegular()
 	++tilemake
@@ -102,7 +110,7 @@
 
 	if(prob(1))
 		custom_emote(2, "makes an excited beeping sound!")
-		playsound(src.loc, 'sound/machines/twobeep.ogg', 50, 0)
+		playsound(src, 'sound/machines/twobeep.ogg', 50, 0)
 
 /mob/living/bot/floorbot/handleAdjacentTarget()
 	if(get_turf(target) == src.loc)
@@ -278,7 +286,7 @@
 /mob/living/bot/floorbot/explode()
 	turn_off()
 	visible_message("<span class='danger'>\The [src] blows apart!</span>")
-	playsound(src.loc, "sparks", 50, 1)
+	playsound(src, "sparks", 50, 1)
 	var/turf/Tsec = get_turf(src)
 
 	var/obj/item/weapon/storage/toolbox/mechanical/N = new /obj/item/weapon/storage/toolbox/mechanical(Tsec)
@@ -300,6 +308,32 @@
 	else if(amount > maxAmount)
 		amount = maxAmount
 
+/mob/living/bot/floorbot/handlePanic()	// Speed modification based on alert level.
+	. = 0
+	switch(get_security_level())
+		if("green")
+			. = 0
+
+		if("yellow")
+			. = 0
+
+		if("violet")
+			. = 0
+
+		if("orange")
+			. = 1
+
+		if("blue")
+			. = 1
+
+		if("red")
+			. = 2
+
+		if("delta")
+			. = 2
+
+	return .
+
 /* Assembly */
 
 /obj/item/weapon/storage/toolbox/mechanical/attackby(var/obj/item/stack/tile/floor/T, mob/living/user as mob)
@@ -307,18 +341,18 @@
 		..()
 		return
 	if(contents.len >= 1)
-		user << "<span class='notice'>They wont fit in as there is already stuff inside.</span>"
+		to_chat(user, "<span class='notice'>They wont fit in as there is already stuff inside.</span>")
 		return
 	if(user.s_active)
 		user.s_active.close(user)
 	if(T.use(10))
 		var/obj/item/weapon/toolbox_tiles/B = new /obj/item/weapon/toolbox_tiles
 		user.put_in_hands(B)
-		user << "<span class='notice'>You add the tiles into the empty toolbox. They protrude from the top.</span>"
+		to_chat(user, "<span class='notice'>You add the tiles into the empty toolbox. They protrude from the top.</span>")
 		user.drop_from_inventory(src)
 		qdel(src)
 	else
-		user << "<span class='warning'>You need 10 floor tiles for a floorbot.</span>"
+		to_chat(user, "<span class='warning'>You need 10 floor tiles for a floorbot.</span>")
 	return
 
 /obj/item/weapon/toolbox_tiles
@@ -340,7 +374,7 @@
 		var/obj/item/weapon/toolbox_tiles_sensor/B = new /obj/item/weapon/toolbox_tiles_sensor()
 		B.created_name = created_name
 		user.put_in_hands(B)
-		user << "<span class='notice'>You add the sensor to the toolbox and tiles!</span>"
+		to_chat(user, "<span class='notice'>You add the sensor to the toolbox and tiles!</span>")
 		user.drop_from_inventory(src)
 		qdel(src)
 	else if (istype(W, /obj/item/weapon/pen))
@@ -370,7 +404,7 @@
 		var/turf/T = get_turf(user.loc)
 		var/mob/living/bot/floorbot/A = new /mob/living/bot/floorbot(T)
 		A.name = created_name
-		user << "<span class='notice'>You add the robot arm to the odd looking toolbox assembly! Boop beep!</span>"
+		to_chat(user, "<span class='notice'>You add the robot arm to the odd looking toolbox assembly! Boop beep!</span>")
 		user.drop_from_inventory(src)
 		qdel(src)
 	else if(istype(W, /obj/item/weapon/pen))

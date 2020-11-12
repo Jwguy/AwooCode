@@ -16,16 +16,16 @@
 
 /obj/item/weapon/deadringer/New()
 	..()
-	processing_objects |= src
+	START_PROCESSING(SSobj, src)
 
 /obj/item/weapon/deadringer/Destroy() //just in case some smartass tries to stay invisible by destroying the watch
-	uncloak()
-	processing_objects -= src
+	reveal()
+	STOP_PROCESSING(SSobj, src)
 	..()
 
 /obj/item/weapon/deadringer/dropped()
 	if(timer > 20)
-		uncloak()
+		reveal()
 		watchowner = null
 	return
 
@@ -67,7 +67,7 @@
 	if(timer > 0)
 		timer--
 	if(timer == 20)
-		uncloak()
+		reveal()
 		if(corpse)
 			new /obj/effect/effect/smoke/chem(corpse.loc)
 			qdel(corpse)
@@ -76,19 +76,20 @@
 	return
 
 /obj/item/weapon/deadringer/proc/deathprevent()
-	for(var/mob/living/simple_animal/D in oviewers(7, src))
-		D.LoseTarget()
+	for(var/mob/living/simple_mob/D in oviewers(7, src))
+		if(!D.has_AI())
+			continue
+		D.ai_holder.lose_target()
+
 	watchowner.emote("deathgasp")
 	watchowner.alpha = 15
 	makeacorpse(watchowner)
-	for(var/mob/living/simple_animal/D in oviewers(7, src))
-		D.LoseTarget()
 	return
 
-/obj/item/weapon/deadringer/proc/uncloak()
+/obj/item/weapon/deadringer/proc/reveal()
 	if(watchowner)
 		watchowner.alpha = 255
-		playsound(get_turf(src), 'sound/effects/uncloak.ogg', 35, 1, -1)
+		playsound(src, 'sound/effects/uncloak.ogg', 35, 1, -1)
 	return
 
 /obj/item/weapon/deadringer/proc/makeacorpse(var/mob/living/carbon/human/H)

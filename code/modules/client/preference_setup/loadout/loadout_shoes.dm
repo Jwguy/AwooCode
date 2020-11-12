@@ -1,13 +1,21 @@
 // Shoelocker
 /datum/gear/shoes
-	display_name = "jackboots"
-	path = /obj/item/clothing/shoes/boots/jackboots
+	display_name = "sandals"
+	path = /obj/item/clothing/shoes/sandal
 	slot = slot_shoes
 	sort_category = "Shoes and Footwear"
 
-/datum/gear/shoes/toeless
-	display_name = "toe-less jackboots"
-	path = /obj/item/clothing/shoes/boots/jackboots/toeless
+/datum/gear/shoes/jackboots
+	display_name = "jackboots"
+	path = /obj/item/clothing/shoes/boots/jackboots
+
+/datum/gear/shoes/kneeboots
+	display_name = "jackboots, knee-length"
+	path = /obj/item/clothing/shoes/boots/jackboots/knee
+
+/datum/gear/shoes/thighboots
+	display_name = "jackboots. thigh-length"
+	path = /obj/item/clothing/shoes/boots/jackboots/thigh
 
 /datum/gear/shoes/workboots
 	display_name = "workboots"
@@ -16,10 +24,6 @@
 /datum/gear/shoes/workboots/toeless
 	display_name = "toe-less workboots"
 	path = /obj/item/clothing/shoes/boots/workboots/toeless
-
-/datum/gear/shoes/sandals
-	display_name = "sandals"
-	path = /obj/item/clothing/shoes/sandal
 
 /datum/gear/shoes/black
 	display_name = "shoes, black"
@@ -34,20 +38,20 @@
 	path = /obj/item/clothing/shoes/brown
 
 /datum/gear/shoes/lacey
-	display_name = "shoes, classy"
+	display_name = "shoes, oxford selection"
 	path = /obj/item/clothing/shoes/laceup
 
-/datum/gear/shoes/dress
-	display_name = "shoes, dress"
-	path = /obj/item/clothing/shoes/laceup
+/datum/gear/shoes/lacey/New()
+    ..()
+    var/list/laces = list()
+    for(var/lace in typesof(/obj/item/clothing/shoes/laceup))
+        var/obj/item/clothing/shoes/laceup/lace_type = lace
+        laces[initial(lace_type.name)] = lace_type
+    gear_tweaks += new/datum/gear_tweak/path(sortAssoc(laces))
 
 /datum/gear/shoes/green
 	display_name = "shoes, green"
 	path = /obj/item/clothing/shoes/green
-
-/datum/gear/shoes/leather
-	display_name = "shoes, leather"
-	path = /obj/item/clothing/shoes/leather
 
 /datum/gear/shoes/orange
 	display_name = "shoes, orange"
@@ -74,36 +78,16 @@
 	path = /obj/item/clothing/shoes/yellow
 
 /datum/gear/shoes/hitops/
-	display_name = "high-top, white"
+	display_name = "high-top selection"
 	path = /obj/item/clothing/shoes/hitops/
 
-/datum/gear/shoes/hitops/red
-	display_name = "high-top, red"
-	path = /obj/item/clothing/shoes/hitops/red
-
-/datum/gear/shoes/hitops/black
-	display_name = "high-top, black"
-	path = /obj/item/clothing/shoes/hitops/black
-
-/datum/gear/shoes/hitops/orange
-	display_name = "high-top, orange"
-	path = /obj/item/clothing/shoes/hitops/orange
-
-/datum/gear/shoes/hitops/blue
-	display_name = "high-top, blue"
-	path = /obj/item/clothing/shoes/hitops/blue
-
-/datum/gear/shoes/hitops/green
-	display_name = "high-top, green"
-	path = /obj/item/clothing/shoes/hitops/green
-
-/datum/gear/shoes/hitops/purple
-	display_name = "high-top, purple"
-	path = /obj/item/clothing/shoes/hitops/purple
-
-/datum/gear/shoes/hitops/yellow
-	display_name = "high-top, yellow"
-	path = /obj/item/clothing/shoes/hitops/yellow
+/datum/gear/shoes/hitops/New()
+    ..()
+    var/list/hitops = list()
+    for(var/hitop in typesof(/obj/item/clothing/shoes/hitops))
+        var/obj/item/clothing/shoes/hitops/hitop_type = hitop
+        hitops[initial(hitop_type.name)] = hitop_type
+    gear_tweaks += new/datum/gear_tweak/path(sortAssoc(hitops))
 
 /datum/gear/shoes/flipflops
 	display_name = "flip flops"
@@ -111,7 +95,7 @@
 
 /datum/gear/shoes/flipflops/New()
 	..()
-	gear_tweaks = list(gear_tweak_free_color_choice)
+	gear_tweaks += gear_tweak_free_color_choice
 
 /datum/gear/shoes/athletic
 	display_name = "athletic shoes"
@@ -119,7 +103,7 @@
 
 /datum/gear/shoes/athletic/New()
 	..()
-	gear_tweaks = list(gear_tweak_free_color_choice)
+	gear_tweaks += gear_tweak_free_color_choice
 
 /datum/gear/shoes/skater
 	display_name = "skater shoes"
@@ -127,7 +111,7 @@
 
 /datum/gear/shoes/skater/New()
 	..()
-	gear_tweaks = list(gear_tweak_free_color_choice)
+	gear_tweaks += gear_tweak_free_color_choice
 
 /datum/gear/shoes/flats
 	display_name = "flats"
@@ -135,7 +119,7 @@
 
 /datum/gear/shoes/flats/New()
 	..()
-	gear_tweaks = list(gear_tweak_free_color_choice)
+	gear_tweaks += gear_tweak_free_color_choice
 
 /datum/gear/shoes/cowboy
 	display_name = "cowboy boots"
@@ -173,7 +157,7 @@
 
 /datum/gear/shoes/heels/New()
 	..()
-	gear_tweaks = list(gear_tweak_free_color_choice)
+	gear_tweaks += gear_tweak_free_color_choice
 
 /datum/gear/shoes/slippers
 	display_name = "bunny slippers"
@@ -191,42 +175,35 @@
 /datum/gear/shoes/boots/winter/science
 	display_name = "science winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/science
-	allowed_roles = list("Research Director","Scientist", "Roboticist", "Xenobiologist")
 
 /datum/gear/shoes/boots/winter/command
-	display_name = "colony director's winter boots"
+	display_name = "site manager's winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/command
-	allowed_roles = list("Colony Director")
+	allowed_roles = list("Site Manager")
 
 /datum/gear/shoes/boots/winter/engineering
 	display_name = "engineering winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/engineering
-	allowed_roles = list("Chief Engineer","Atmospheric Technician", "Station Engineer")
 
 /datum/gear/shoes/boots/winter/atmos
 	display_name = "atmospherics winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/atmos
-	allowed_roles = list("Chief Engineer", "Atmospheric Technician")
 
 /datum/gear/shoes/boots/winter/medical
 	display_name = "medical winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/medical
-	allowed_roles = list("Medical Doctor","Chief Medical Officer","Chemist","Paramedic","Geneticist", "Psychiatrist")
 
 /datum/gear/shoes/boots/winter/mining
 	display_name = "mining winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/mining
-	allowed_roles = list("Shaft Miner")
 
 /datum/gear/shoes/boots/winter/supply
 	display_name = "supply winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/supply
-	allowed_roles = list("Quartermaster","Cargo Technician")
 
 /datum/gear/shoes/boots/winter/hydro
 	display_name = "hydroponics winter boots"
 	path = /obj/item/clothing/shoes/boots/winter/hydro
-	allowed_roles = list("Botanist", "Xenobiologist")
 
 /datum/gear/shoes/circuitry
 	display_name = "boots, circuitry (empty)"

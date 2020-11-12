@@ -7,14 +7,15 @@
 /obj/item/device/multitool
 	name = "multitool"
 	desc = "Used for pulsing wires to test which to cut. Not recommended by doctors."
+	description_info = "You can use this on airlocks or APCs to try to hack them without cutting wires."
 	icon_state = "multitool"
-	flags = CONDUCT
 	force = 5.0
 	w_class = ITEMSIZE_SMALL
 	throwforce = 5.0
 	throw_range = 15
 	throw_speed = 3
-	desc = "You can use this on airlocks or APCs to try to hack them without cutting wires."
+	drop_sound = 'sound/items/drop/multitool.ogg'
+	pickup_sound = 'sound/items/pickup/multitool.ogg'
 
 	matter = list(DEFAULT_WALL_MATERIAL = 50,"glass" = 20)
 
@@ -52,10 +53,10 @@
 	return ..()
 
 /obj/item/device/multitool/proc/mode_switch(mob/living/user)
-	if(++mode_index > modes.len) mode_index = 1
+	if(mode_index + 1 > modes.len) mode_index = 1
 
 	else
-		mode_index++
+		mode_index += 1
 
 	toolmode = modes[mode_index]
 	to_chat(user,"<span class='notice'>\The [src] is now set to [toolmode].</span>")
@@ -64,14 +65,32 @@
 
 	return
 
+/obj/item/device/multitool/is_multitool()
+	return TRUE
+
 /obj/item/device/multitool/cyborg
 	name = "multitool"
 	desc = "Optimised and stripped-down version of a regular multitool."
 	toolspeed = 0.5
 
+
+
+/datum/category_item/catalogue/anomalous/precursor_a/alien_multitool
+	name = "Precursor Alpha Object - Pulse Tool"
+	desc = "This ancient object appears to be an electrical tool. \
+	It has a simple mechanism at the handle, which will cause a pulse of \
+	energy to be emitted from the head of the tool. This can be used on a \
+	conductive object such as a wire, in order to send a pulse signal through it.\
+	<br><br>\
+	These qualities make this object somewhat similar in purpose to the common \
+	multitool, and can probably be used for tasks such as direct interfacing with \
+	an airlock, if one knows how."
+	value = CATALOGUER_REWARD_EASY
+
 /obj/item/device/multitool/alien
 	name = "alien multitool"
 	desc = "An omni-technological interface."
+	catalogue_data = list(/datum/category_item/catalogue/anomalous/precursor_a/alien_multitool)
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "multitool"
 	toolspeed = 0.1

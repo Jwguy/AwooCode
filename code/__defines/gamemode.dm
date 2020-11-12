@@ -1,13 +1,25 @@
-#define GAME_STATE_PREGAME		1
-#define GAME_STATE_SETTING_UP	2
-#define GAME_STATE_PLAYING		3
-#define GAME_STATE_FINISHED		4
+// Ticker game states, turns out these are  equivilent to runlevels1
+#define GAME_STATE_INIT			0	// RUNLEVEL_INIT
+#define GAME_STATE_PREGAME		1	// RUNLEVEL_LOBBY
+#define GAME_STATE_SETTING_UP	2	// RUNLEVEL_SETUP
+#define GAME_STATE_PLAYING		3	// RUNLEVEL_GAME
+#define GAME_STATE_FINISHED		4	// RUNLEVEL_POSTGAME
+
+//End game state, to manage round end.
+#define END_GAME_NOT_OVER		1	// Still playing normally
+#define END_GAME_MODE_FINISHED	2	// Mode has finished but game has not, wait for game to end too.
+#define END_GAME_READY_TO_END	3	// Game and Mode have finished, do rounded stuff.
+#define END_GAME_ENDING			4	// Just waiting for ending timer.
+#define END_GAME_DELAYED		5	// Admin has delayed the round.
 
 // Security levels.
 #define SEC_LEVEL_GREEN 0
-#define SEC_LEVEL_BLUE  1
-#define SEC_LEVEL_RED   2
-#define SEC_LEVEL_DELTA 3
+#define SEC_LEVEL_YELLOW  1
+#define SEC_LEVEL_VIOLET  2
+#define SEC_LEVEL_ORANGE  3
+#define SEC_LEVEL_BLUE  4
+#define SEC_LEVEL_RED   5
+#define SEC_LEVEL_DELTA 6
 
 #define BE_TRAITOR    0x1
 #define BE_OPERATIVE  0x2
@@ -23,8 +35,13 @@
 #define BE_RAIDER     0x800
 #define BE_PLANT      0x1000
 #define BE_MUTINEER   0x2000
-#define BE_PAI        0x4000
-#define BE_LOYALIST   0x8000
+#define BE_LOYALIST   0x4000
+#define BE_PAI        0x8000
+//VOREStation Add
+#define BE_LOSTDRONE  0x10000
+#define BE_MAINTPRED  0x20000
+#define BE_MORPH      0x40000
+//VOREStation Add End
 
 var/list/be_special_flags = list(
 	"Traitor"          = BE_TRAITOR,
@@ -33,7 +50,6 @@ var/list/be_special_flags = list(
 	"Wizard"           = BE_WIZARD,
 	"Malf AI"          = BE_MALF,
 	"Revolutionary"    = BE_REV,
-	"Loyalist"         = BE_LOYALIST,
 	"Xenomorph"        = BE_ALIEN,
 	"Positronic Brain" = BE_AI,
 	"Cultist"          = BE_CULTIST,
@@ -42,10 +58,14 @@ var/list/be_special_flags = list(
 	"Raider"           = BE_RAIDER,
 	"Diona"            = BE_PLANT,
 	"Mutineer"         = BE_MUTINEER,
-	"pAI"              = BE_PAI
+	"Loyalist"         = BE_LOYALIST,
+	"pAI"              = BE_PAI,
+	//VOREStation Add
+	"Lost Drone"       = BE_LOSTDRONE,
+	"Maint Pred"       = BE_MAINTPRED,
+	"Morph"            = BE_MORPH,
+	//VOREStation Add End
 )
-
-#define IS_MODE_COMPILED(MODE) (ispath(text2path("/datum/game_mode/"+(MODE))))
 
 
 // Antagonist datum flags.
@@ -87,6 +107,7 @@ var/list/be_special_flags = list(
 #define MODE_AUTOTRAITOR "autotraitor"
 #define MODE_INFILTRATOR "infiltrator"
 #define MODE_THUG "thug"
+#define MODE_STOWAWAY "stowaway"
 
 #define DEFAULT_TELECRYSTAL_AMOUNT 120
 

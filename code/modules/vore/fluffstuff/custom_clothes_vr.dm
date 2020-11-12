@@ -502,22 +502,6 @@
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
 	armor = list(melee = 40, bullet = 30, laser = 30, energy = 10, bomb = 10, bio = 0, rad = 0)
 
-// bwoincognito:Tasald Corlethian
-/obj/item/clothing/suit/storage/det_suit/fluff/tas_coat
-	name = "Armored Colony coat"
-	desc = "Dark green and grey colored sleeveless long coat with two thick metal shoulder pads. has seen some wear and tear, with noticeable patches in the fabric, scratches on the shoulder pads, but with a clean patch on the left upper chest. It has a red NT marked on the right shoulder pad and red Security on the left. "
-	allowed = list(/obj/item/weapon/gun,/obj/item/weapon/reagent_containers/spray/pepper,/obj/item/ammo_magazine,/obj/item/ammo_casing,/obj/item/weapon/melee/baton,/obj/item/weapon/handcuffs,/obj/item/device/flashlight/maglight,/obj/item/clothing/head/helmet)
-
-	icon = 'icons/vore/custom_clothes_vr.dmi'
-	icon_state = "tasaldcoat"
-
-	icon_override = 'icons/vore/custom_clothes_vr.dmi'
-	item_state = "tasaldcoat_mob"
-
-	blood_overlay_type = "coat"
-	body_parts_covered = UPPER_TORSO|LOWER_TORSO|LEGS|ARMS
-	armor = list(melee = 60, bullet = 60, laser = 60, energy = 40, bomb = 40, bio = 0, rad = 0)
-
 //Event Costumes Below
 /obj/item/clothing/head/helmet/fluff/freddy
 	name = "Animatronic Suit Helmet"
@@ -693,9 +677,6 @@
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	item_state = "rig-hos_mob"
 
-	//Slightly improved security voidsuit, which when made, was:
-	//armor = list(melee = 50, bullet = 25, laser = 25, energy = 5, bomb = 45, bio = 100, rad = 10)
-	armor = list("melee" = 60, "bullet" = 35, "laser" = 35, "energy" = 15, "bomb" = 50, "bio" = 100, "rad" = 10)
 	species_restricted = null
 
 //HOS Hardsuit Helmet
@@ -709,7 +690,6 @@
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	item_state = "rig0-hos_mob"
 
-	armor = list("melee" = 60, "bullet" = 35, "laser" = 35, "energy" = 15, "bomb" = 50, "bio" = 100, "rad" = 10)
 	species_restricted = null
 
 //adk09:Lethe
@@ -865,7 +845,6 @@
 	armor = list(melee = 50, bullet = 40, laser = 45, energy = 25, bomb = 50, bio = 100, rad = 50) //These values were taken from the combat rigs and adjusted to be weaker than said rigs.
 	slowdown = 0
 	allowed = list(/obj/item/weapon/gun,/obj/item/device/flashlight,/obj/item/weapon/tank,/obj/item/device/suit_cooling_unit,/obj/item/weapon/melee/baton)
-	w_class = ITEMSIZE_NORMAL
 
 	icon = 'icons/vore/custom_clothes_vr.dmi'
 	icon_state = "joansuit"
@@ -907,6 +886,7 @@
 /obj/item/clothing/under/rank/khi
 	name = "Delete Me"
 	desc = "Why did you spawn this one? Dork."
+	catalogue_data = list(/datum/category_item/catalogue/information/organization/khi)
 	sensor_mode = 3
 
 	icon = 'icons/vore/custom_clothes_vr.dmi'
@@ -1523,6 +1503,14 @@ Departamental Swimsuits, for general use
 	icon_override = 'icons/vore/custom_clothes_vr.dmi'
 	item_state = "gnshorts"
 
+/obj/item/clothing/under/fluff/v_nanovest
+	name = "Varmacorp nanovest"
+	desc = "A nifty little vest optimized for nanite contact."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "nanovest"
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+	item_state = "nanovest"
+
 //General use
 /obj/item/clothing/suit/storage/fluff/loincloth
 	name = "Loincloth"
@@ -1689,7 +1677,7 @@ Departamental Swimsuits, for general use
 	icon_state = "kilanosuit_p"
 	item_state = "kilanosuit_p"
 
-//Mewchild: Phi Ahkeen
+//Mewchild: Phi Vietsi
 /obj/item/clothing/gloves/ring/seal/signet/fluff/phi
 	name = "Phi's Bone Signet Ring"
 	desc = "A signet ring belonging to Phi, carved from the bones of something long extinct, as a ward against bad luck."
@@ -1762,7 +1750,7 @@ Departamental Swimsuits, for general use
 	mob_can_equip(var/mob/living/carbon/human/H, slot, disable_warning = 0)
 		if(..())
 			if(H.ckey != "silencedmp5a5")
-				H << "<span class='warning'>...The faceplate is clearly not made for your anatomy, thus, does not fit.</span>"
+				to_chat(H, "<span class='warning'>...The faceplate is clearly not made for your anatomy, thus, does not fit.</span>")
 				return 0
 			else
 				return 1
@@ -1781,7 +1769,7 @@ Departamental Swimsuits, for general use
 		if(..() && istype(H) && H.ckey == "silencedmp5a5")
 			return 1
 		else
-			to_chat(H,"<span class='warning'>This suit is not designed for you.</span>")
+			to_chat(H, "<span class='warning'>This suit is not designed for you.</span>")
 			return 0
 
 //Zigfe:Zaoozaoo Xrimxuqmqixzix
@@ -1810,3 +1798,211 @@ Departamental Swimsuits, for general use
 	body_parts_covered = UPPER_TORSO|LOWER_TORSO|ARMS
 	w_class = ITEMSIZE_NORMAL
 	slot = ACCESSORY_SLOT_OVER
+
+//General definition for bracer items. No icons.
+/obj/item/clothing/accessory/bracer
+	name = "bracer"
+	desc = "A bracer."
+	icon_state = null
+	item_state = null
+	icon_override = null
+	slot_flags = SLOT_GLOVES | SLOT_TIE
+	w_class = ITEMSIZE_SMALL
+	slot = ACCESSORY_SLOT_ARMBAND
+
+//AegisOA:Xander Bevin
+//WanderingDeviant:S'thasha Tavakdavi
+/obj/item/clothing/accessory/bracer/fluff/xander_sthasha
+	name = "Plasteel Bracer"
+	desc = "A sturdy arm-guard of polished plasteel that sports gold trimming, silver tribal-looping etchings, and a single cut diamond set into its side. Attached to one's forearm with a small, magnetic clasp."
+	icon = 'icons/vore/custom_items_vr.dmi'
+	icon_state = "bracer_xander_sthasha"
+	icon_override = 'icons/vore/custom_onmob_vr.dmi'
+	item_state = "bracer_xander_sthasha"
+
+/obj/item/clothing/accessory/bracer/fluff/xander_sthasha/digest_act(var/atom/movable/item_storage = null)
+	return FALSE
+
+/obj/item/clothing/accessory/bracer/fluff/xander_sthasha/gurgle_contaminate(var/atom/movable/item_storage = null)
+	return FALSE
+
+//Heroman3003:Lauren Zackson
+/obj/item/clothing/accessory/collar/fluff/goldenstring
+	name = "golden string"
+	desc = "It appears to just be a length of gold-colored string attached to a simple plastic clasp, meant to be worn around the neck"
+	icon = 'icons/vore/custom_items_vr.dmi'
+	icon_override = 'icons/vore/custom_onmob_vr.dmi'
+	icon_state = "goldenstring"
+	item_state = "goldenstring"
+	w_class = ITEMSIZE_TINY
+	slot_flags = SLOT_TIE
+
+//Chaoko99: Aika Hisakawa
+/obj/item/clothing/suit/fluff/blue_trimmed_coat
+	name = "blue-trimmed greatcoat"
+	desc = "A heavy, form-obscuring coat with gilded buttons and azure trim."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "aika_coat"
+
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+	item_state = "aika_coat_mob"
+	flags_inv = HIDEJUMPSUIT | HIDETIE
+
+	item_icons = list(
+		slot_l_hand_str = 'icons/vore/custom_clothes_vr.dmi',
+		slot_r_hand_str = 'icons/vore/custom_clothes_vr.dmi',
+		)
+	item_state_slots = list(slot_r_hand_str = "aika_coat_mob_r", slot_l_hand_str = "aika_coat_mob_l")
+
+//Burrito Justice: Jayda Wilson
+/obj/item/clothing/under/solgov/utility/sifguard/medical/fluff
+	desc = "The utility uniform of the Terran Commonwealth Explorer Corps, made from biohazard resistant material. This is an older issuing of the uniform, with integrated department markings."
+
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+
+	icon_state = "blackutility_med"
+	worn_state = "blackutility_med"
+	item_state = "blackutility_med"
+
+	rolled_down = 0
+	rolled_sleeves = 0
+	starting_accessories = null
+	item_icons = list()
+
+//Vorrarkul: Melanie Farmer
+/obj/item/clothing/under/fluff/slime_skeleton
+	name = "Melanie's Skeleton"
+	desc = "The skeleton of a promethean, still covered in residual slime. Upon closer inspection, they're not even real bones!"
+
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+
+	icon_state = "melanie_skeleton"
+	item_state = "melanie_skeleton_mob"
+
+	body_parts_covered = 0
+
+	species_restricted = list("exclude", SPECIES_TESHARI)
+
+/obj/item/clothing/under/fluff/slime_skeleton/mob_can_equip(M as mob, slot, disable_warning = FALSE)
+	if(!..())
+		return 0
+
+	if(istype(M,/mob/living/carbon/human))
+		var/mob/living/carbon/human/H = M
+		if(!(H.get_species() == SPECIES_PROMETHEAN))	//Only wearable by slimes, since species_restricted actually checks bodytype, not species
+			return 0
+
+	return 1
+
+/obj/item/clothing/under/fluff/slime_skeleton/digest_act(var/atom/movable/item_storage = null)
+	return FALSE	//Indigestible
+
+//Bacon12366:Elly Brown
+/obj/item/clothing/suit/storage/star
+	name = "Star hoodie"
+	desc = "It's a black long hoodie with a big blue star at the chest area. It's made of pretty soft material."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "star_hoodie"
+
+
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+	item_state = "star_hoodie"
+
+//KillerDragn:Excess
+/obj/item/clothing/accessory/collar/pink/fluff/warning
+	name = "Warning Collar (AGGRESSIVE)"
+	desc = "A bright red warning collar with white text - \"AGGRESSIVE\"."
+
+//KillerDragn:Excess
+/obj/item/clothing/under/fluff/excess
+	name = "XS-21E Labeled Latex Clothing"
+	desc = "A latex navy blue tube-top and matching compression shorts, with a bright yellow stripe down the side. \"XS-21E\" is written on the thigh. \"Warning\" is written in yellow by the stripe on the top."
+	body_parts_covered = UPPER_TORSO|LOWER_TORSO
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "latex_clothes"
+	item_icons = list()
+	default_worn_icon = 'icons/vore/custom_clothes_vr.dmi'
+	color = COLOR_NAVY
+	sprite_sheets = null
+
+//SweetBlueSylveon:Pip Shyner
+/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip
+	name = "Pip's Cloak"
+	desc = "A brightly colored cloak, similar in pattern to the CRO's cloak. It's colored White, Pink, and Blue, with Gold buttons."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "pipcloak"
+	item_state = "pipcloak_mob"
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+
+/obj/item/clothing/accessory/poncho/roles/cloak/hop/fluff/pip/equipped()		//Because otherwise it gets reset every time
+	..()
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+
+//CappyCat:Cappy Fuzzlyfeathers
+/obj/item/clothing/accessory/watch
+	name = "silver pocket watch"
+	desc = "A fancy silver-plated digital pocket watch. Looks expensive."
+	icon = 'icons/obj/deadringer.dmi'
+	icon_state = "deadringer"
+	w_class = ITEMSIZE_SMALL
+	slot_flags = SLOT_ID | SLOT_BELT | SLOT_TIE
+
+//Pimientopyro:Zaku Fyodorovna
+/obj/item/clothing/suit/varsity/green/sweater_vest
+	name = "green sweater vest"
+	desc = "A green argyle sweater vest with a white undershirt, a must for long winter nights and looking like a dork."
+
+//Azura Chitin: Azura Chitin
+/obj/item/clothing/accessory/collar/azura
+	name = "Azura's collar"
+	desc = "A black collar with green patterns, reminiscent of tribal tattoos. Regardless of what the front of the tag says, the back of it reads \"Azura Chitin\"."
+	icon = 'icons/vore/custom_items_vr.dmi'
+	icon_state = "azuracollar"
+
+	icon_override = 'icons/vore/custom_onmob_vr.dmi'
+	icon_state = "azuracollar"
+
+
+//Xonkon: Zena Aviv
+/obj/item/clothing/head/helmet/space/void/engineering/zena
+	name = "custom shroud helmet"
+	desc = "A black and orange engineering shroud helmet. Orange plated and specially crafted and augmented for a variety of activites."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "zenahelmet"
+
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+	item_state = "zenahelmet_mob"
+
+	species_restricted = null
+
+
+/obj/item/clothing/suit/space/void/engineering/zena
+	name = "custom shroud suit"
+	desc = "A black and orange engineering shroud helmet. Skintight and specially crafted and augmented for a variety of activites."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "zenasuit"
+
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+	item_state = "zenasuit_mob"
+
+	species_restricted = null
+
+/obj/item/clothing/suit/storage/flintlock
+	name = "green jacket"
+	desc = "Flintlock's green jacket. It seems to be made of rather high quality leather."
+	icon = 'icons/vore/custom_clothes_vr.dmi'
+	icon_state = "flintlock"
+	item_state_slots = list(slot_r_hand_str = "item_greensuit", slot_l_hand_str = "item_greensuit")
+	blood_overlay_type = "coat"
+	body_parts_covered = UPPER_TORSO|ARMS
+	flags_inv = HIDEHOLSTER
+
+	icon_override = 'icons/vore/custom_clothes_vr.dmi'
+	item_state = "flintlock_mob"
+
+//BobOfBoblandia: Charles Gettler
+/obj/item/clothing/head/that/fluff/gettler
+	name = "Charles' Top-Hat"
+	desc = "A special hat, removed from its owner."

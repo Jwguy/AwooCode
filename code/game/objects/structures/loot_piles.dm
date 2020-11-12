@@ -40,6 +40,10 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	var/list/uncommon_loot = list()	// Uncommon is actually maybe some useful items, usually the reason someone bothers looking inside.
 	var/list/rare_loot = list()		// Rare is really powerful, or at least unique items.
 
+/obj/structure/loot_pile/attack_ai(var/mob/user)
+	if(isrobot(user) && Adjacent(user))
+		return attack_hand(user)
+
 /obj/structure/loot_pile/attack_hand(mob/user)
 	//Human mob
 	if(isliving(user))
@@ -115,7 +119,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	var/path = pick(rare_loot)
 	return new path(src)
 
-/obj/structure/loot_pile/initialize()
+/obj/structure/loot_pile/Initialize()
 	if(icon_states_to_use && icon_states_to_use.len)
 		icon_state = pick(icon_states_to_use)
 	. = ..()
@@ -152,8 +156,8 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/clothing/shoes/galoshes,
 		/obj/item/clothing/shoes/black,
 		/obj/item/clothing/shoes/laceup,
-		/obj/item/clothing/shoes/black,
-		/obj/item/clothing/shoes/leather,
+		/obj/item/clothing/shoes/laceup/grey,
+		/obj/item/clothing/shoes/laceup/brown,
 		/obj/item/clothing/gloves/botanic_leather,
 		/obj/item/clothing/gloves/sterile/latex,
 		/obj/item/clothing/gloves/white,
@@ -188,13 +192,14 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/weapon/spacecash/c10,
 		/obj/item/weapon/spacecash/c20,
 		/obj/item/weapon/camera_assembly,
-		/obj/item/weapon/caution,
-		/obj/item/weapon/caution/cone,
+		/obj/item/clothing/suit/caution,
+		/obj/item/clothing/head/cone,
 		/obj/item/weapon/card/emag_broken,
 		/obj/item/device/camera,
 		/obj/item/device/pda,
 		/obj/item/device/radio/headset,
-		/obj/item/device/paicard
+		/obj/item/device/paicard,
+		/obj/item/weapon/reagent_containers/hypospray/autoinjector/biginjector/glucose
 	)
 
 	uncommon_loot = list(
@@ -222,8 +227,10 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/trash/candle,
 		/obj/item/trash/candy,
 		/obj/item/trash/candy/proteinbar,
+		/obj/item/trash/candy/gums,
 		/obj/item/trash/cheesie,
 		/obj/item/trash/chips,
+		/obj/item/trash/chips/bbq,
 		/obj/item/trash/liquidfood,
 		/obj/item/trash/pistachios,
 		/obj/item/trash/plate,
@@ -234,6 +241,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/trash/sosjerky,
 		/obj/item/trash/syndi_cakes,
 		/obj/item/trash/tastybread,
+		/obj/item/trash/coffee,
 		/obj/item/trash/tray,
 		/obj/item/trash/unajerky,
 		/obj/item/trash/waffles,
@@ -257,7 +265,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/weapon/reagent_containers/syringe/steroid,
 		/obj/item/weapon/storage/pill_bottle/zoom,
 		/obj/item/weapon/storage/pill_bottle/happy,
-		/obj/item/weapon/storage/pill_bottle/tramadol
+		/obj/item/weapon/storage/pill_bottle/paracetamol //VOREStation Edit
 	)
 
 // Contains loads of different types of boxes, which may have items inside!
@@ -339,7 +347,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/weapon/stock_parts/subspace/transmitter,
 		/obj/item/weapon/stock_parts/subspace/treatment,
 		/obj/item/frame,
-		/obj/item/broken_device,
+		/obj/item/broken_device/random,
 		/obj/item/borg/upgrade/restart,
 		/obj/item/weapon/cell,
 		/obj/item/weapon/cell/high,
@@ -350,8 +358,8 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/weapon/circuitboard/atmos_alert,
 		/obj/item/weapon/circuitboard/airalarm,
 		/obj/item/weapon/circuitboard/fax,
-		/obj/item/weapon/circuitboard/ghettosmes,
 		/obj/item/weapon/circuitboard/jukebox,
+		/obj/item/weapon/circuitboard/batteryrack,
 		/obj/item/weapon/circuitboard/message_monitor,
 		/obj/item/weapon/circuitboard/rcon_console,
 		/obj/item/weapon/smes_coil,
@@ -574,6 +582,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 	icon = 'icons/mecha/mecha.dmi'
 	icon_state = "engineering_pod-broken"
 	density = TRUE
+	anchored = FALSE // In case a dead mecha-mob dies in a bad spot.
 
 	chance_uncommon = 20
 	chance_rare = 10
@@ -615,7 +624,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 /obj/structure/loot_pile/mecha/ripley
 	name = "ripley wreckage"
 	desc = "The ruins of some unfortunate ripley. Perhaps something is salvageable."
-	icon_states_to_use = list("ripley-broken", "firefighter-broken", "ripley-broken-old")
+	icon_state = "ripley-broken"
 
 	common_loot = list(
 		/obj/random/tool,
@@ -649,6 +658,12 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/flamer/rigged
 		)
 
+/obj/structure/loot_pile/mecha/ripley/firefighter
+	icon_state = "firefighter-broken"
+
+/obj/structure/loot_pile/mecha/ripley/random_sprite
+	icon_states_to_use = list("ripley-broken", "firefighter-broken", "ripley-broken-old")
+
 //Death-Ripley, same common, but more combat-exosuit-based
 /obj/structure/loot_pile/mecha/deathripley
 	name = "strange ripley wreckage"
@@ -672,7 +687,7 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		)
 
 	uncommon_loot = list(
-		/obj/item/mecha_parts/mecha_equipment/tool/safety_clamp,
+		/obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/safety,
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/riggedlaser,
 		/obj/item/mecha_parts/mecha_equipment/repair_droid,
 		/obj/item/mecha_parts/mecha_equipment/tesla_energy_relay
@@ -719,6 +734,14 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/mecha_parts/mecha_equipment/shocker
 		)
 
+/obj/structure/loot_pile/mecha/odysseus/murdysseus
+	icon_state = "murdysseus-broken"
+
+/obj/structure/loot_pile/mecha/hoverpod
+	name = "hoverpod wreckage"
+	desc = "The ruins of some unfortunate hoverpod. Perhaps something is salvageable."
+	icon_state = "engineering_pod"
+
 /obj/structure/loot_pile/mecha/gygax
 	name = "gygax wreckage"
 	desc = "The ruins of some unfortunate gygax. Perhaps something is salvageable."
@@ -759,6 +782,19 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/heavy
 		)
 
+/obj/structure/loot_pile/mecha/gygax/dark
+	icon_state = "darkgygax-broken"
+
+// Todo: Better loot.
+/obj/structure/loot_pile/mecha/gygax/dark/adv
+	icon_state = "darkgygax_adv-broken"
+	icon_scale_x = 1.5
+	icon_scale_y = 1.5
+	pixel_y = 8
+
+/obj/structure/loot_pile/mecha/gygax/medgax
+	icon_state = "medgax-broken"
+
 /obj/structure/loot_pile/mecha/durand
 	name = "durand wreckage"
 	desc = "The ruins of some unfortunate durand. Perhaps something is salvageable."
@@ -798,6 +834,22 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/mecha_parts/mecha_equipment/repair_droid,
 		/obj/item/mecha_parts/mecha_equipment/weapon/energy/laser/heavy
 		)
+
+/obj/structure/loot_pile/mecha/marauder
+	name = "marauder wreckage"
+	desc = "The ruins of some unfortunate marauder. Perhaps something is salvagable."
+	icon_state = "marauder-broken"
+	// Todo: Better loot.
+
+/obj/structure/loot_pile/mecha/marauder/seraph
+	name = "seraph wreckage"
+	desc = "The ruins of some unfortunate seraph. Perhaps something is salvagable."
+	icon_state = "seraph-broken"
+
+/obj/structure/loot_pile/mecha/marauder/mauler
+	name = "mauler wreckage"
+	desc = "The ruins of some unfortunate mauler. Perhaps something is salvagable."
+	icon_state = "mauler-broken"
 
 /obj/structure/loot_pile/mecha/phazon
 	name = "phazon wreckage"
@@ -869,3 +921,27 @@ Loot piles can be depleted, if loot_depleted is turned on.  Note that players wh
 		/obj/item/borg/upgrade/syndicate,
 		/obj/item/borg/upgrade/vtec
 		)
+
+// Contains old mediciation, most of it unidentified and has a good chance of being useless.
+/obj/structure/loot_pile/surface/medicine_cabinet
+	name = "abandoned medicine cabinet"
+	desc = "An old cabinet, it might still have something of use inside."
+	icon_state = "medicine_cabinet"
+	density = FALSE
+	chance_uncommon = 0
+	chance_rare = 0
+
+	common_loot = list(
+		/obj/random/unidentified_medicine/old_medicine
+	)
+
+// Like the above but has way better odds, in exchange for being in a place still inhabited (or was recently).
+/obj/structure/loot_pile/surface/medicine_cabinet/fresh
+	name = "medicine cabinet"
+	desc = "A cabinet designed to hold medicine, it might still have something of use inside."
+	icon_state = "medicine_cabinet"
+	density = FALSE
+
+	common_loot = list(
+		/obj/random/unidentified_medicine/fresh_medicine
+	)

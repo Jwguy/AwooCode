@@ -32,3 +32,6 @@
 	..()
 
 	return
+
+/obj/structure/closet/crate/medical/blood
+	closet_appearance = /decl/closet_appearance/cart/biohazard/alt

@@ -3,13 +3,18 @@
 /obj/effect/step_trigger
 	var/affect_ghosts = 0
 	var/stopper = 1 // stops throwers
-	invisibility = 101 // nope cant see this shit
+	invisibility = 99 // nope cant see this shit
+	plane = ABOVE_PLANE
 	anchored = 1
+	icon = 'icons/mob/screen1.dmi' //VS Edit
+	icon_state = "centermarker" //VS Edit
 
 /obj/effect/step_trigger/proc/Trigger(var/atom/movable/A)
 	return 0
 
-/obj/effect/step_trigger/Crossed(H as mob|obj)
+/obj/effect/step_trigger/Crossed(atom/movable/H as mob|obj)
+	if(H.is_incorporeal())
+		return
 	..()
 	if(!H)
 		return
@@ -93,21 +98,56 @@
 	var/teleport_y = 0
 	var/teleport_z = 0
 
-	Trigger(var/atom/movable/A)
-		if(teleport_x && teleport_y && teleport_z)
-			var/turf/T = locate(teleport_x, teleport_y, teleport_z)
-			if(isliving(A))
-				var/mob/living/L = A
-				if(L.pulling)
-					var/atom/movable/P = L.pulling
-					L.stop_pulling()
-					P.forceMove(T)
-					L.forceMove(T)
-					L.start_pulling(P)
-				else
-					A.forceMove(T)
-			else
-				A.forceMove(T)
+/obj/effect/step_trigger/teleporter/Trigger(atom/movable/AM)
+	if(teleport_x && teleport_y && teleport_z)
+		var/turf/T = locate(teleport_x, teleport_y, teleport_z)
+		move_object(AM, T)
+
+
+/obj/effect/step_trigger/teleporter/proc/move_object(atom/movable/AM, turf/T)
+	if(AM.anchored && !istype(AM, /obj/mecha))
+		return
+
+	if(isliving(AM))
+		var/mob/living/L = AM
+		if(L.pulling)
+			var/atom/movable/P = L.pulling
+			L.stop_pulling()
+			P.forceMove(T)
+			L.forceMove(T)
+			L.start_pulling(P)
+		else
+			L.forceMove(T)
+	else
+		AM.forceMove(T)
+
+/* Moves things by an offset, useful for 'Bridges'. Uses dir and a distance var to work with maploader direction changes. */
+/obj/effect/step_trigger/teleporter/offset
+	icon = 'icons/effects/effects.dmi'
+	icon_state = "arrow"
+	var/distance = 3
+
+/obj/effect/step_trigger/teleporter/offset/north
+	dir = NORTH
+
+/obj/effect/step_trigger/teleporter/offset/south
+	dir = SOUTH
+
+/obj/effect/step_trigger/teleporter/offset/east
+	dir = EAST
+
+/obj/effect/step_trigger/teleporter/offset/west
+	dir = WEST
+
+/obj/effect/step_trigger/teleporter/offset/Trigger(atom/movable/AM)
+	var/turf/T = get_turf(src)
+	for(var/i = 1 to distance)
+		T = get_step(T, dir)
+		if(!istype(T))
+			return
+	move_object(AM, T)
+
+
 
 /* Random teleporter, teleports atoms to locations ranging from teleport_x - teleport_x_offset, etc */
 
@@ -128,7 +168,7 @@
 	var/obj/effect/landmark/the_landmark = null
 	var/landmark_id = null
 
-/obj/effect/step_trigger/teleporter/landmark/initialize()
+/obj/effect/step_trigger/teleporter/landmark/Initialize()
 	. = ..()
 	for(var/obj/effect/landmark/teleport_mark/mark in tele_landmarks)
 		if(mark.landmark_id == landmark_id)
@@ -191,6 +231,10 @@ var/global/list/tele_landmarks = list() // Terrible, but the alternative is loop
 		if(isobserver(A))
 			A.forceMove(T) // Harmlessly move ghosts.
 			return
+		//VOREStation Edit Start
+		if(!(A.can_fall()))
+			return // Phased shifted kin should not fall
+		//VOREStation Edit End
 
 		A.forceMove(T)
 		// Living things should probably be logged when they fall...

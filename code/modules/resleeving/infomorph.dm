@@ -112,7 +112,10 @@ var/list/infomorph_emotions = list(
 		pda.ownjob = "Sleevecard"
 		pda.owner = text("[]", src)
 		pda.name = pda.owner + " (" + pda.ownjob + ")"
-		pda.toff = 1
+
+		var/datum/data/pda/app/messenger/M = pda.find_program(/datum/data/pda/app/messenger)
+		if(M)
+			M.toff = TRUE
 
 	..()
 
@@ -144,9 +147,9 @@ var/list/infomorph_emotions = list(
 		return 0
 	..()
 
-/mob/living/silicon/infomorph/default_can_use_topic(var/src_object)
+/mob/living/silicon/infomorph/default_can_use_tgui_topic(var/src_object)
 	if(src_object in src)
-		return shared_nano_interaction()
+		return shared_tgui_interaction()
 
 /////////// DAMAGES
 /mob/living/silicon/infomorph/emp_act(severity)
@@ -154,7 +157,7 @@ var/list/infomorph_emotions = list(
 	// 20% chance to kill
 
 	src.silence_time = world.timeofday + 120 * 10		// Silence for 2 minutes
-	src << "<font color=green><b>Communication circuit overload. Shutting down and reloading communication circuits - speech and messaging functionality will be unavailable until the reboot is complete.</b></font>"
+	to_chat(src, "<font color=green><b>Communication circuit overload. Shutting down and reloading communication circuits - speech and messaging functionality will be unavailable until the reboot is complete.</b></font>")
 	if(prob(20))
 		var/turf/T = get_turf_or_move(src.loc)
 		for (var/mob/M in viewers(T))
@@ -187,8 +190,8 @@ var/list/infomorph_emotions = list(
 	medicalActive1 = null
 	medicalActive2 = null
 	medical_cannotfind = 0
-	GLOB.nanomanager.update_uis(src)
-	usr << "<span class='notice'>You reset your record-viewing software.</span>"
+	SStgui.update_uis(src)
+	to_chat(usr, "<span class='notice'>You reset your record-viewing software.</span>")
 
 /*
 /mob/living/silicon/infomorph/proc/switchCamera(var/obj/machinery/camera/C)
@@ -337,7 +340,7 @@ var/list/infomorph_emotions = list(
 
 	resting = !resting
 	icon_state = resting ? "[chassis]_rest" : "[chassis]"
-	src << "<span class='notice'>You are now [resting ? "resting" : "getting up"]</span>"
+	to_chat(src, "<span class='notice'>You are now [resting ? "resting" : "getting up"]</span>")
 
 	canmove = !resting
 
@@ -364,16 +367,16 @@ var/list/infomorph_emotions = list(
 			switch(alert(user, "Do you wish to add access to [src] or remove access from [src]?",,"Add Access","Remove Access", "Cancel"))
 				if("Add Access")
 					idcard.access |= ID.access
-					user << "<span class='notice'>You add the access from the [W] to [src].</span>"
+					to_chat(user, "<span class='notice'>You add the access from the [W] to [src].</span>")
 					return
 				if("Remove Access")
 					idcard.access = null
-					user << "<span class='notice'>You remove the access from [src].</span>"
+					to_chat(user, "<span class='notice'>You remove the access from [src].</span>")
 					return
 				if("Cancel")
 					return
 		else if (istype(W, /obj/item/weapon/card/id) && idaccessible == 0)
-			user << "<span class='notice'>[src] is not accepting access modifcations at this time.</span>"
+			to_chat(user, "<span class='notice'>[src] is not accepting access modifcations at this time.</span>")
 			return
 
 //////////////////// MISC VERBS
@@ -384,11 +387,11 @@ var/list/infomorph_emotions = list(
 
 	if(idaccessible == 0)
 		idaccessible = 1
-		src << "<span class='notice'>You allow access modifications.</span>"
+		to_chat(src, "<span class='notice'>You allow access modifications.</span>")
 
 	else
 		idaccessible = 0
-		src << "<span class='notice'>You block access modfications.</span>"
+		to_chat(src, "<span class='notice'>You block access modfications.</span>")
 
 /mob/living/silicon/infomorph/verb/wipe_software()
 	set name = "Suspend Self"
@@ -417,13 +420,13 @@ var/list/infomorph_emotions = list(
 	desc = "Modify the settings on your integrated radio."
 
 	if(radio)
-		radio.ui_interact(src,"main",null,1,conscious_state)
+		radio.tgui_interact(src)
 	else
-		to_chat(src,"<span class='warning'>You don't have a radio!</span>")
+		to_chat(src, "<span class='warning'>You don't have a radio!</span>")
 
 /mob/living/silicon/infomorph/say(var/msg)
 	if(silence_time)
-		src << "<font color=green>Communication circuits remain uninitialized.</font>"
+		to_chat(src, "<font color=green>Communication circuits remain uninitialized.</font>")
 	else
 		..(msg)
 
@@ -448,7 +451,7 @@ var/global/list/default_infomorph_software = list()
 		var/datum/infomorph_software/P = new type()
 		if(infomorph_software_by_key[P.id])
 			var/datum/infomorph_software/O = infomorph_software_by_key[P.id]
-			world << "<span class='warning'>Infomorph software module [P.name] has the same key as [O.name]!</span>"
+			to_world("<span class='warning'>Infomorph software module [P.name] has the same key as [O.name]!</span>")
 			r = 0
 			continue
 		infomorph_software_by_key[P.id] = P
@@ -460,114 +463,99 @@ var/global/list/default_infomorph_software = list()
 	set category = "Card Commands"
 	set name = "Software Interface"
 
-	ui_interact(src)
+	tgui_interact(src)
 
-/mob/living/silicon/infomorph/ui_interact(mob/user, ui_key = "main", datum/nanoui/ui = null, force_open = 1, key_state = self_state)
-	if(user != src)
-		if(ui) ui.set_status(STATUS_CLOSE, 0)
-		return
+/mob/living/silicon/infomorph/tgui_state(mob/user)
+	return GLOB.tgui_self_state
 
-	if(ui_key != "main")
-		var/datum/infomorph_software/S = software[ui_key]
-		if(S && !S.toggle)
-			S.on_ui_interact(src, ui, force_open)
-		else
-			if(ui) ui.set_status(STATUS_CLOSE, 0)
-		return
+/mob/living/silicon/infomorph/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "pAIInterface", "Card Software Interface")
+		ui.open()
 
-	var/data[0]
-
+/mob/living/silicon/infomorph/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = ..()
+	
 	// Software we have bought
-	var/bought_software[0]
+	var/list/bought_software = list()
 	// Software we have not bought
-	var/not_bought_software[0]
+	var/list/not_bought_software = list()
 
 	for(var/key in infomorph_software_by_key)
 		var/datum/infomorph_software/S = infomorph_software_by_key[key]
-		var/software_data[0]
+		var/list/software_data = list()
 		software_data["name"] = S.name
 		software_data["id"] = S.id
 		if(key in software)
 			software_data["on"] = S.is_active(src)
-			bought_software[++bought_software.len] = software_data
+			bought_software.Add(list(software_data))
 		else
 			software_data["ram"] = S.ram_cost
-			not_bought_software[++not_bought_software.len] = software_data
+			not_bought_software.Add(list(software_data))
 
 	data["bought"] = bought_software
 	data["not_bought"] = not_bought_software
 	data["available_ram"] = ram
 
 	// Emotions
-	var/emotions[0]
+	var/list/emotions = list()
 	for(var/name in infomorph_emotions)
-		var/emote[0]
+		var/list/emote = list()
 		emote["name"] = name
 		emote["id"] = infomorph_emotions[name]
-		emotions[++emotions.len] = emote
+		emotions.Add(list(emote))
 
 	data["emotions"] = emotions
 	data["current_emotion"] = card.current_emotion
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open, key_state)
-	if (!ui)
-		ui = new(user, src, ui_key, "pai_interface.tmpl", "Card Software Interface", 450, 600, state = key_state)
-		ui.set_initial_data(data)
-		ui.open()
-		ui.set_auto_update(1)
+	return data
 
-/mob/living/silicon/infomorph/Topic(href, href_list)
-	. = ..()
-	if(.) return
+/mob/living/silicon/infomorph/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+	if(..())
+		return TRUE
 
-	if(href_list["software"])
-		var/soft = href_list["software"]
-		var/datum/infomorph_software/S = software[soft]
-		if(S.toggle)
-			S.toggle(src)
-		else
-			ui_interact(src, ui_key = soft)
-		return 1
+	switch(action)
+		if("software")
+			var/soft = params["software"]
+			var/datum/infomorph_software/S = software[soft]
+			if(S.toggle)
+				S.toggle(src)
+			else
+				S.tgui_interact(src, parent_ui = ui)
+			return TRUE
 
-	else if(href_list["stopic"])
-		var/soft = href_list["stopic"]
-		var/datum/infomorph_software/S = software[soft]
-		if(S)
-			return S.Topic(href, href_list)
+		if("purchase")
+			var/soft = params["purchase"]
+			var/datum/infomorph_software/S = infomorph_software_by_key[soft]
+			if(S && (ram >= S.ram_cost))
+				ram -= S.ram_cost
+				software[S.id] = S
+			return TRUE
 
-	else if(href_list["purchase"])
-		var/soft = href_list["purchase"]
-		var/datum/infomorph_software/S = infomorph_software_by_key[soft]
-		if(S && (ram >= S.ram_cost))
-			ram -= S.ram_cost
-			software[S.id] = S
-		return 1
-
-	else if(href_list["image"])
-		var/img = href_list["image"]
-		if(img)
-			card.setEmotion(img)
-		return 1
+		if("image")
+			var/img = text2num(params["image"])
+			if(img)
+				card.setEmotion(img)
+			return TRUE
 
 /mob/living/silicon/infomorph/examine(mob/user)
-	..(user, infix = ", personal AI")
+	. = ..(user, infix = ", personal AI")
 
-	var/msg = ""
 	switch(src.stat)
 		if(CONSCIOUS)
-			if(!src.client)	msg += "\nIt appears to be in stand-by mode." //afk
-		if(UNCONSCIOUS)		msg += "\n<span class='warning'>It doesn't seem to be responding.</span>"
-		if(DEAD)			msg += "\n<span class='deadsay'>It looks completely unsalvageable.</span>"
-	msg += "\n*---------*"
+			if(!src.client)	. += "It appears to be in stand-by mode." //afk
+		if(UNCONSCIOUS)		. += "<span class='warning'>It doesn't seem to be responding.</span>"
+		if(DEAD)			. += "<span class='deadsay'>It looks completely unsalvageable.</span>"
+	. += "*---------*"
 
-	if(print_flavor_text()) msg += "\n[print_flavor_text()]\n"
+	if(print_flavor_text())
+		. += "[print_flavor_text()]"
 
 	if (pose)
-		if( findtext(pose,".",lentext(pose)) == 0 && findtext(pose,"!",lentext(pose)) == 0 && findtext(pose,"?",lentext(pose)) == 0 )
+		if( findtext(pose,".",length(pose)) == 0 && findtext(pose,"!",length(pose)) == 0 && findtext(pose,"?",length(pose)) == 0 )
 			pose = addtext(pose,".") //Makes sure all emotes end with a period.
-		msg += "\nIt is [pose]"
-
-	user << msg
+		. += "It is [pose]"
 
 /mob/living/silicon/infomorph/Life()
 	//We're dead or EMP'd or something.
@@ -594,7 +582,7 @@ var/global/list/default_infomorph_software = list()
 	if(silence_time)
 		if(world.timeofday >= silence_time)
 			silence_time = null
-			src << "<font color=green>Communication circuit reinitialized. Speech and messaging functionality restored.</font>"
+			to_chat(src, "<font color=green>Communication circuit reinitialized. Speech and messaging functionality restored.</font>")
 
 	handle_statuses()
 

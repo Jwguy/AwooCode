@@ -3,7 +3,6 @@
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "jaws"
 	desc = "The jaws of the law."
-	flags = CONDUCT
 	force = 10
 	throwforce = 0
 	hitsound = 'sound/weapons/bite.ogg'
@@ -15,7 +14,6 @@
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "smalljaws"
 	desc = "The jaws of a small dog."
-	flags = CONDUCT
 	force = 5
 	throwforce = 0
 	hitsound = 'sound/weapons/bite.ogg'
@@ -24,7 +22,7 @@
 	var/emagged = 0
 
 /obj/item/weapon/dogborg/jaws/small/attack_self(mob/user)
-	var/mob/living/silicon/robot.R = user
+	var/mob/living/silicon/robot/R = user
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
 		if(emagged)
@@ -32,7 +30,6 @@
 			icon = 'icons/mob/dogborg_vr.dmi'
 			icon_state = "jaws"
 			desc = "The jaws of the law."
-			flags = CONDUCT
 			force = 10
 			throwforce = 0
 			hitsound = 'sound/weapons/bite.ogg'
@@ -43,7 +40,6 @@
 			icon = 'icons/mob/dogborg_vr.dmi'
 			icon_state = "smalljaws"
 			desc = "The jaws of a small dog."
-			flags = CONDUCT
 			force = 5
 			throwforce = 0
 			hitsound = 'sound/weapons/bite.ogg'
@@ -57,7 +53,6 @@
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "nose"
 	desc = "The BOOP module, a simple reagent and atmosphere sniffer."
-	flags = CONDUCT
 	force = 0
 	throwforce = 0
 	attack_verb = list("nuzzled", "nosed", "booped")
@@ -150,6 +145,7 @@
 	name = "MediHound hypospray"
 	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves, designed for heavy-duty medical equipment."
 	charge_cost = 10
+	reagent_ids = list("inaprovaline", "dexalin", "bicaridine", "kelotane", "anti_toxin", "spaceacillin", "paracetamol")
 	var/datum/matter_synth/water = null
 
 /obj/item/weapon/reagent_containers/borghypo/hound/process() //Recharges in smaller steps and uses the water reserves as well.
@@ -163,10 +159,16 @@
 					reagent_volumes[T] = min(reagent_volumes[T] + 1, volume)
 	return 1
 
+/obj/item/weapon/reagent_containers/borghypo/hound/lost
+	name = "Hound hypospray"
+	desc = "An advanced chemical synthesizer and injection system utilizing carrier's reserves."
+	reagent_ids = list("tricordrazine", "inaprovaline", "bicaridine", "dexalin", "anti_toxin", "tramadol", "spaceacillin")
+
+
 //Tongue stuff
 /obj/item/device/dogborg/tongue
 	name = "synthetic tongue"
-	desc = "Useful for slurping mess off the floor before affectionally licking the crew members in the face."
+	desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "synthtongue"
 	hitsound = 'sound/effects/attackblob.ogg'
@@ -178,15 +180,15 @@
 	flags |= NOBLUDGEON //No more attack messages
 
 /obj/item/device/dogborg/tongue/examine(user)
-	if(!..(user, 1))
-		return
-	if(water.energy)
-		user <<"<span class='notice'>[src] is wet. Just like it should be.</span>"
-	if(water.energy < 5)
-		user <<"<span class='notice'>[src] is dry.</span>"
+	. = ..()
+	if(Adjacent(user))
+		if(water.energy)
+			. += "<span class='notice'>[src] is wet. Just like it should be.</span>"
+		if(water.energy < 5)
+			. += "<span class='notice'>[src] is dry.</span>"
 
 /obj/item/device/dogborg/tongue/attack_self(mob/user)
-	var/mob/living/silicon/robot.R = user
+	var/mob/living/silicon/robot/R = user
 	if(R.emagged || R.emag_items)
 		emagged = !emagged
 		if(emagged)
@@ -196,7 +198,7 @@
 			icon_state = "syndietongue"
 		else
 			name = "synthetic tongue"
-			desc = "Useful for slurping mess off the floor before affectionally licking the crew members in the face."
+			desc = "Useful for slurping mess off the floor before affectionately licking the crew members in the face."
 			icon = 'icons/mob/dogborg_vr.dmi'
 			icon_state = "synthtongue"
 		update_icon()
@@ -212,6 +214,7 @@
 		user.visible_message("[user] begins to lap up water from [target.name].", "<span class='notice'>You begin to lap up water from [target.name].</span>")
 		if(do_after (user, 50))
 			water.add_charge(50)
+			to_chat(src, "You refill some of your water reserves.")
 	else if(water.energy < 5)
 		to_chat(user, "<span class='notice'>Your mouth feels dry. You should drink up some water .</span>")
 		return
@@ -221,7 +224,7 @@
 			to_chat(user, "<span class='notice'>You finish licking off \the [target.name].</span>")
 			water.use_charge(5)
 			qdel(target)
-			var/mob/living/silicon/robot.R = user
+			var/mob/living/silicon/robot/R = user
 			R.cell.charge += 50
 	else if(istype(target,/obj/item))
 		if(istype(target,/obj/item/trash))
@@ -230,7 +233,7 @@
 				user.visible_message("[user] finishes eating \the [target.name].", "<span class='notice'>You finish eating \the [target.name].</span>")
 				to_chat(user, "<span class='notice'>You finish off \the [target.name].</span>")
 				qdel(target)
-				var/mob/living/silicon/robot.R = user
+				var/mob/living/silicon/robot/R = user
 				R.cell.charge += 250
 				water.use_charge(5)
 			return
@@ -239,9 +242,9 @@
 			if(do_after (user, 50))
 				user.visible_message("[user] finishes gulping down \the [target.name].", "<span class='notice'>You finish swallowing \the [target.name].</span>")
 				to_chat(user, "<span class='notice'>You finish off \the [target.name], and gain some charge!</span>")
-				var/mob/living/silicon/robot.R = user
-				var/obj/item/weapon/cell.C = target
-				R.cell.charge += C.maxcharge / 3
+				var/mob/living/silicon/robot/R = user
+				var/obj/item/weapon/cell/C = target
+				R.cell.charge += C.charge / 3
 				water.use_charge(5)
 				qdel(target)
 			return
@@ -254,7 +257,7 @@
 			target.clean_blood()
 	else if(ishuman(target))
 		if(src.emagged)
-			var/mob/living/silicon/robot.R = user
+			var/mob/living/silicon/robot/R = user
 			var/mob/living/L = target
 			if(R.cell.charge <= 666)
 				return
@@ -263,11 +266,11 @@
 			L.apply_effect(STUTTER, 1)
 			L.visible_message("<span class='danger'>[user] has shocked [L] with its tongue!</span>", \
 								"<span class='userdanger'>[user] has shocked you with its tongue! You can feel the betrayal.</span>")
-			playsound(loc, 'sound/weapons/Egloves.ogg', 50, 1, -1)
+			playsound(src, 'sound/weapons/Egloves.ogg', 50, 1, -1)
 			R.cell.charge -= 666
 		else
-			user.visible_message("<span class='notice'>\the [user] affectionally licks all over \the [target]'s face!</span>", "<span class='notice'>You affectionally lick all over \the [target]'s face!</span>")
-			playsound(src.loc, 'sound/effects/attackblob.ogg', 50, 1)
+			user.visible_message("<span class='notice'>\the [user] affectionately licks all over \the [target]'s face!</span>", "<span class='notice'>You affectionately lick all over \the [target]'s face!</span>")
+			playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 			water.use_charge(5)
 			var/mob/living/carbon/human/H = target
 			if(H.species.lightweight == 1)
@@ -297,7 +300,7 @@
 	flags |= NOBLUDGEON
 
 /obj/item/pupscrubber/attack_self(mob/user)
-	var/mob/living/silicon/robot.R = user
+	var/mob/living/silicon/robot/R = user
 	if(!enabled)
 		R.scrubbing = TRUE
 		enabled = TRUE
@@ -323,7 +326,6 @@
 	icon = 'icons/mob/dogborg_vr.dmi'
 	icon_state = "swordtail"
 	desc = "A glowing pink dagger normally attached to the end of a cyborg's tail. It appears to be extremely sharp."
-	flags = CONDUCT
 	force = 20 //Takes 5 hits to 100-0
 	sharp = 1
 	edge = 1
@@ -411,12 +413,12 @@
 
 	last_special = world.time + 10
 	status_flags |= LEAPING
-	pixel_y = 10
+	pixel_y = pixel_y + 10
 
 	src.visible_message("<span class='danger'>\The [src] leaps at [T]!</span>")
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
-	playsound(src.loc, 'sound/mecha/mechstep2.ogg', 50, 1)
-	pixel_y = 0
+	playsound(src, 'sound/mecha/mechstep2.ogg', 50, 1)
+	pixel_y = default_pixel_y
 	cell.charge -= 750
 
 	sleep(5)
@@ -435,5 +437,5 @@
 	var/armor_block = run_armor_check(T, "melee")
 	var/armor_soak = get_armor_soak(T, "melee")
 	T.apply_damage(20, HALLOSS,, armor_block, armor_soak)
-	if(prob(33))
-		T.apply_effect(3, WEAKEN, armor_block)
+	if(prob(75)) //75% chance to stun for 5 seconds, really only going to be 4 bcus click cooldown+animation.
+		T.apply_effect(5, WEAKEN, armor_block)

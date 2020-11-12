@@ -1,16 +1,18 @@
 /obj/item/projectile/bullet
 	name = "bullet"
 	icon_state = "bullet"
-	fire_sound = 'sound/weapons/gunshot/gunshot_strong.ogg'
+	fire_sound = 'sound/weapons/Gunshot4.ogg'
 	damage = 60
 	damage_type = BRUTE
 	nodamage = 0
 	check_armour = "bullet"
 	embed_chance = 20	//Modified in the actual embed process, but this should keep embed chance about the same
 	sharp = 1
+	hitsound_wall = "ricochet"
+	impact_effect_type = /obj/effect/temp_visual/impact_effect
 	var/mob_passthrough_check = 0
 
-	muzzle_type = /obj/effect/projectile/bullet/muzzle
+	muzzle_type = /obj/effect/projectile/muzzle/bullet
 
 /obj/item/projectile/bullet/on_hit(var/atom/target, var/blocked = 0)
 	if (..(target, blocked))
@@ -65,7 +67,7 @@
 /* short-casing projectiles, like the kind used in pistols or SMGs */
 
 /obj/item/projectile/bullet/pistol // 9mm pistols and most SMGs. Sacrifice power for capacity.
-	fire_sound = 'sound/weapons/gunshot/gunshot_pistol.ogg' // ToDo: Different shot sounds for different strength pistols. -Ace
+	fire_sound = 'sound/weapons/gunshot2.ogg'
 	damage = 20
 
 /obj/item/projectile/bullet/pistol/ap
@@ -77,7 +79,7 @@
 	armor_penetration = -50
 
 /obj/item/projectile/bullet/pistol/medium // .45 (and maybe .40 if it ever gets added) caliber security pistols. Balance between capacity and power.
-	// fire_sound = 'sound/weapons/gunshot3.ogg' // ToDo: Different shot sounds for different strength pistols.
+	fire_sound = 'sound/weapons/gunshot3.ogg' // Snappier sound.
 	damage = 25
 
 /obj/item/projectile/bullet/pistol/medium/ap
@@ -89,11 +91,11 @@
 	armor_penetration = -50
 
 /obj/item/projectile/bullet/pistol/strong // .357 and .44 caliber stuff. High power pistols like the Mateba or Desert Eagle. Sacrifice capacity for power.
-	fire_sound = 'sound/weapons/gunshot/gunshot_strong.ogg' // ToDo: Replace with something less ugly. I recommend weapons/gunshot3.ogg
+	fire_sound = 'sound/weapons/gunshot4.ogg'
 	damage = 60
 
 /obj/item/projectile/bullet/pistol/rubber/strong // "Rubber" bullets for high power pistols.
-	fire_sound = 'sound/weapons/gunshot/gunshot_strong.ogg' // ToDo: Same as above.
+	fire_sound = 'sound/weapons/gunshot3.ogg' // Rubber shots have less powder, but these still have more punch than normal rubber shot.
 	damage = 10
 	agony = 60
 	embed_chance = 0
@@ -107,14 +109,15 @@
 	embed_chance = 0
 	sharp = 0
 	check_armour = "melee"
+	fire_sound ='sound/weapons/Gunshot_pathetic.ogg' // Rubber shots have less powder in the casing.
 
 /* shotgun projectiles */
 
 /obj/item/projectile/bullet/shotgun
 	name = "slug"
-	fire_sound = 'sound/weapons/gunshot/shotgun.ogg'
+	fire_sound = 'sound/weapons/Gunshot_shotgun.ogg'
 	damage = 50
-	armor_penetration = 15
+	armor_penetration = 20
 
 /obj/item/projectile/bullet/shotgun/beanbag		//because beanbags are not bullets
 	name = "beanbag"
@@ -128,7 +131,7 @@
 //Overall less damage than slugs in exchange for more damage at very close range and more embedding
 /obj/item/projectile/bullet/pellet/shotgun
 	name = "shrapnel"
-	fire_sound = 'sound/weapons/gunshot/shotgun.ogg'
+	fire_sound = 'sound/weapons/Gunshot_shotgun.ogg'
 	damage = 13
 	pellets = 6
 	range_step = 1
@@ -143,7 +146,7 @@
 //EMP shotgun 'slug', it's basically a beanbag that pops a tiny emp when it hits. //Not currently used
 /obj/item/projectile/bullet/shotgun/ion
 	name = "ion slug"
-	fire_sound = 'sound/weapons/Laser.ogg'
+	fire_sound = 'sound/weapons/Laser.ogg' // Really? We got nothing better than this?
 	damage = 15
 	embed_chance = 0
 	sharp = 0
@@ -160,13 +163,17 @@
 /* "Rifle" rounds */
 
 /obj/item/projectile/bullet/rifle
-	fire_sound = 'sound/weapons/gunshot/gunshot3.ogg'
+	fire_sound = 'sound/weapons/Gunshot_generic_rifle.ogg'
 	armor_penetration = 15
 	penetrating = 1
 
 /obj/item/projectile/bullet/rifle/a762
-	fire_sound = 'sound/weapons/gunshot/gunshot2.ogg'
+	fire_sound = 'sound/weapons/Gunshot_heavy.ogg'
 	damage = 35
+
+/obj/item/projectile/bullet/rifle/a762/sniper // Hitscan specifically for sniper ammo; to be implimented at a later date, probably for the SVD. -Ace
+	fire_sound = 'sound/weapons/Gunshot_sniper.ogg'
+	hitscan = 1 //so the ammo isn't useless as a sniper weapon
 
 /obj/item/projectile/bullet/rifle/a762/ap
 	damage = 30
@@ -177,12 +184,13 @@
 	armor_penetration = -50
 	penetrating = 0
 
-/obj/item/projectile/bullet/rifle/a762/hunter // Optimized for killing simple animals and not people, because Balance.
+/obj/item/projectile/bullet/rifle/a762/hunter // Optimized for killing simple animals and not people, because Balance(tm)
 	damage = 20
 	SA_bonus_damage = 50 // 70 total on animals.
 	SA_vulnerability = SA_ANIMAL
 
 /obj/item/projectile/bullet/rifle/a545
+	fire_sound = 'sound/weapons/Gunshot_light.ogg'
 	damage = 25
 
 /obj/item/projectile/bullet/rifle/a545/ap
@@ -199,14 +207,28 @@
 	SA_bonus_damage = 35 // 50 total on animals.
 	SA_vulnerability = SA_ANIMAL
 
-/obj/item/projectile/bullet/rifle/a145
-	fire_sound = 'sound/weapons/gunshot/sniper.ogg'
+/obj/item/projectile/bullet/rifle/a145 // 14.5×114mm is bigger than a .50 BMG round.
+	fire_sound = 'sound/weapons/Gunshot_cannon.ogg' // This is literally an anti-tank rifle caliber. It better sound like a fucking cannon.
 	damage = 80
 	stun = 3
 	weaken = 3
 	penetrating = 5
 	armor_penetration = 80
 	hitscan = 1 //so the PTR isn't useless as a sniper weapon
+
+	icon_state = "bullet_alt"
+	tracer_type = /obj/effect/projectile/tracer/cannon
+
+/obj/item/projectile/bullet/rifle/a145/highvel
+	damage = 50
+	stun = 1
+	weaken = 0
+	penetrating = 15
+	armor_penetration = 90
+
+/obj/item/projectile/bullet/rifle/a44rifle
+	fire_sound = 'sound/weapons/gunshot4.ogg'
+	damage = 50
 
 /* Miscellaneous */
 
@@ -239,7 +261,7 @@
 	icon_state = "bullet_alt"
 	damage = 15
 	damage_type = BURN
-	incendiary = 1
+	incendiary = 0.5
 	flammability = 2
 
 /obj/item/projectile/bullet/incendiary/flamethrower
@@ -251,35 +273,33 @@
 	incendiary = 2
 	flammability = 4
 	agony = 30
-	kill_count = 4
+	range = 4
 	vacuum_traversal = 0
 
 /obj/item/projectile/bullet/incendiary/flamethrower/large
-	damage = 15
-	kill_count = 6
+	damage = 5
+	incendiary = 3
+	flammability = 2
+	range = 6
 
-/obj/item/projectile/bullet/blank
-	invisibility = 101
-	damage = 1
-	embed_chance = 0
+/obj/item/projectile/bullet/incendiary/flamethrower/tiny
+	damage = 2
+	incendiary = 0
+	flammability = 2
+	modifier_type_to_apply = /datum/modifier/fire/stack_managed/weak
+	modifier_duration = 20 SECONDS
+	range = 6
+	agony = 0
 
-/* Practice */
+/* Practice rounds and blanks */
 
-/obj/item/projectile/bullet/pistol/practice
+/obj/item/projectile/bullet/practice
 	damage = 5
 
-/obj/item/projectile/bullet/rifle/practice
-	damage = 5
-	penetrating = 0
-
-/obj/item/projectile/bullet/shotgun/practice
-	name = "practice"
-	damage = 5
-
-/obj/item/projectile/bullet/pistol/cap
+/obj/item/projectile/bullet/pistol/cap // Just the primer, such as a cap gun.
 	name = "cap"
 	damage_type = HALLOSS
-	fire_sound = null
+	fire_sound = 'sound/effects/snap.ogg'
 	damage = 0
 	nodamage = 1
 	embed_chance = 0
@@ -288,5 +308,18 @@
 	combustion = FALSE
 
 /obj/item/projectile/bullet/pistol/cap/process()
+	loc = null
+	qdel(src)
+
+/obj/item/projectile/bullet/blank
+	name = "blank"
+	damage_type = HALLOSS
+	fire_sound = 'sound/weapons/Gunshot_generic_rifle.ogg' // Blanks still make loud noises.
+	damage = 0
+	nodamage = 1
+	embed_chance = 0
+	sharp = 0
+
+/obj/item/projectile/bullet/blank/cap/process()
 	loc = null
 	qdel(src)

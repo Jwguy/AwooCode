@@ -21,6 +21,8 @@ avoid code duplication. This includes items that may sometimes act as a standard
 
 // Called when the item is in the active hand, and clicked; alternately, there is an 'activate held object' verb or you can hit pagedown.
 /obj/item/proc/attack_self(mob/user)
+	if(SEND_SIGNAL(src, COMSIG_ITEM_ATTACK_SELF, user) & COMPONENT_NO_INTERACT)
+		return
 	return
 
 // Called at the start of resolve_attackby(), before the actual attack.
@@ -28,27 +30,27 @@ avoid code duplication. This includes items that may sometimes act as a standard
 	return
 
 //I would prefer to rename this to attack(), but that would involve touching hundreds of files.
-/obj/item/proc/resolve_attackby(atom/A, mob/user, var/attack_modifier = 1)
+/obj/item/proc/resolve_attackby(atom/A, mob/user, var/attack_modifier = 1, var/click_parameters)
 	pre_attack(A, user)
 	add_fingerprint(user)
-	return A.attackby(src, user, attack_modifier)
+	return A.attackby(src, user, attack_modifier, click_parameters)
 
 // No comment
-/atom/proc/attackby(obj/item/W, mob/user, var/attack_modifier)
-	return
+/atom/proc/attackby(obj/item/W, mob/user, var/attack_modifier, var/click_parameters)
+	if(SEND_SIGNAL(src, COMSIG_PARENT_ATTACKBY, W, user, click_parameters) & COMPONENT_NO_AFTERATTACK)
+		return TRUE
+	return FALSE
 
-/atom/movable/attackby(obj/item/W, mob/user, var/attack_modifier)
-	if(!(W.flags & NOBLUDGEON))
+/atom/movable/attackby(obj/item/W, mob/user, var/attack_modifier, var/click_parameters)
+	. = ..()
+	if(!. && !(W.flags & NOBLUDGEON))
 		visible_message("<span class='danger'>[src] has been hit by [user] with [W].</span>")
 
-/mob/living/attackby(obj/item/I, mob/user, var/attack_modifier)
+/mob/living/attackby(obj/item/I, mob/user, var/attack_modifier, var/click_parameters)
 	if(!ismob(user))
 		return 0
 	if(can_operate(src) && I.do_surgery(src,user))
-		if(I.can_do_surgery(src,user))
-			return 1
-		else
-			return 0
+		return 1
 	if(attempt_vr(src,"vore_attackby",args)) return //VOREStation Add - The vore, of course.
 	return I.attack(src, user, user.zone_sel.selecting, attack_modifier)
 
@@ -60,7 +62,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 // Same as above but actually does useful things.
 // W is the item being used in the attack, if any. modifier is if the attack should be longer or shorter than usual, for whatever reason.
 /mob/living/get_attack_speed(var/obj/item/W)
-	var/speed = DEFAULT_ATTACK_COOLDOWN
+	var/speed = base_attack_cooldown
 	if(W && istype(W))
 		speed = W.attackspeed
 	for(var/datum/modifier/M in modifiers)
@@ -101,7 +103,7 @@ avoid code duplication. This includes items that may sometimes act as a standard
 /obj/item/proc/apply_hit_effect(mob/living/target, mob/living/user, var/hit_zone, var/attack_modifier)
 	user.break_cloak()
 	if(hitsound)
-		playsound(loc, hitsound, 50, 1, -1)
+		playsound(src, hitsound, 50, 1, -1)
 
 	var/power = force
 	for(var/datum/modifier/M in user.modifiers)

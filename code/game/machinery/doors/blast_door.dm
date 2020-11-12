@@ -10,20 +10,27 @@
 // UPDATE 06.04.2018
 // The emag thing wasn't working as intended, manually overwrote it.
 
+#define BLAST_DOOR_CRUSH_DAMAGE 40
+#define SHUTTER_CRUSH_DAMAGE 0 // VOREStation Edit - Shutter damage 0.
+
 /obj/machinery/door/blast
 	name = "Blast Door"
 	desc = "That looks like it doesn't open easily."
 	icon = 'icons/obj/doors/rapid_pdoor.dmi'
 	icon_state = null
 	min_force = 20 //minimum amount of force needed to damage the door with a melee weapon
-	var/material/implicit_material
+	var/datum/material/implicit_material
 	// Icon states for different shutter types. Simply change this instead of rewriting the update_icon proc.
 	var/icon_state_open = null
 	var/icon_state_opening = null
 	var/icon_state_closed = null
 	var/icon_state_closing = null
+	var/open_sound = 'sound/machines/door/blastdooropen.ogg'
+	var/close_sound = 'sound/machines/door/blastdoorclose.ogg'
+	var/damage = BLAST_DOOR_CRUSH_DAMAGE
+	var/multiplier = 1 // The multiplier for how powerful our YEET is.
 
-	closed_layer = 3.3 // Above airlocks when closed
+	closed_layer = ON_WINDOW_LAYER // Above airlocks when closed
 	var/id = 1.0
 	dir = 1
 	explosion_resistance = 25
@@ -32,7 +39,7 @@
 	//turning this off prevents awkward zone geometry in places like medbay lobby, for example.
 	block_air_zones = 0
 
-/obj/machinery/door/blast/initialize()
+/obj/machinery/door/blast/Initialize()
 	. = ..()
 	implicit_material = get_material_by_name("plasteel")
 
@@ -56,18 +63,27 @@
 		icon_state = icon_state_closed
 	else
 		icon_state = icon_state_open
-	radiation_repository.resistance_cache.Remove(get_turf(src))
+	SSradiation.resistance_cache.Remove(get_turf(src))
 	return
 
-// Has to be in here, comment at the top is older than the emag_act code on doors proper
+// Proc: emag_act()
+// Description: Emag action to allow blast doors to double their yeet distance and speed.
 /obj/machinery/door/blast/emag_act()
-	return -1
+	if(!emagged)
+		emagged = 1
+		multiplier = 2 // Haha emag go yeet
+		return 1
+
+// Blast doors are triggered remotely, so nobody is allowed to physically influence it.
+/obj/machinery/door/blast/allowed(mob/M)
+	return FALSE
 
 // Proc: force_open()
 // Parameters: None
 // Description: Opens the door. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_open()
 	src.operating = 1
+	playsound(src, open_sound, 100, 1)
 	flick(icon_state_opening, src)
 	src.density = 0
 	update_nearby_tiles()
@@ -81,22 +97,35 @@
 // Parameters: None
 // Description: Closes the door. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_close()
+	// Blast door turf checks. We do this before the door closes to prevent it from failing after the door is closed, because obv a closed door will block any adjacency checks.
+	var/turf/T = get_turf(src)
+	var/list/yeet_turfs = T.CardinalTurfs(TRUE)
+
 	src.operating = 1
+	playsound(src, close_sound, 100, 1)
 	src.layer = closed_layer
 	flick(icon_state_closing, src)
 	src.density = 1
 	update_nearby_tiles()
 	src.update_icon()
-	src.set_opacity(initial(opacity))
+	src.set_opacity(1)
 	sleep(15)
 	src.operating = 0
+	
+	// Blast door crushing.
+	for(var/turf/turf in locs)
+		for(var/atom/movable/AM in turf)
+			if(AM.airlock_crush(damage))
+				if(LAZYLEN(yeet_turfs))
+					AM.throw_at(get_edge_target_turf(src, get_dir(src, pick(yeet_turfs))), (rand(1,3) * multiplier), (rand(2,4) * multiplier)) // YEET.
+				take_damage(damage*0.2)
 
 // Proc: force_toggle()
 // Parameters: None
 // Description: Opens or closes the door, depending on current state. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_toggle(var/forced = 0, mob/user as mob)
 	if (forced)
-		playsound(src.loc, 'sound/machines/airlock_creaking.ogg', 100, 1)
+		playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
 
 	if(src.density)
 		src.force_open()
@@ -146,12 +175,12 @@
 					user.visible_message("<span class='danger'>\The [user] hits \the [src] with \the [W] with no visible effect.</span>")
 				else
 					user.visible_message("<span class='danger'>\The [user] forcefully strikes \the [src] with \the [W]!</span>")
-					playsound(src.loc, hitsound, 100, 1)
+					playsound(src, hitsound, 100, 1)
 					take_damage(W.force*0.35) //it's a blast door, it should take a while. -Luke
 				return
 
 	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == "plasteel") // Repairing.
-		var/amt = Ceiling((maxhealth - health)/150)
+		var/amt = CEILING((maxhealth - health)/150, 1)
 		if(!amt)
 			to_chat(user, "<span class='notice'>\The [src] is already fully repaired.</span>")
 			return
@@ -176,7 +205,7 @@
 				user.visible_message("<span class='danger'>\The [user] hits \the [src] with \the [W] with no visible effect.</span>")
 			else
 				user.visible_message("<span class='danger'>\The [user] forcefully strikes \the [src] with \the [W]!</span>")
-				playsound(src.loc, hitsound, 100, 1)
+				playsound(src, hitsound, 100, 1)
 				take_damage(W.force*0.15) //If the item isn't a weapon, let's make this take longer than usual to break it down.
 			return
 
@@ -190,13 +219,13 @@
 			if(src.density)
 				visible_message("<span class='alium'>\The [user] begins forcing \the [src] open!</span>")
 				if(do_after(user, 15 SECONDS,src))
-					playsound(src.loc, 'sound/machines/airlock_creaking.ogg', 100, 1)
+					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
 					visible_message("<span class='danger'>\The [user] forces \the [src] open!</span>")
 					force_open(1)
 			else
 				visible_message("<span class='alium'>\The [user] begins forcing \the [src] closed!</span>")
 				if(do_after(user, 5 SECONDS,src))
-					playsound(src.loc, 'sound/machines/airlock_creaking.ogg', 100, 1)
+					playsound(src, 'sound/machines/door/airlock_creaking.ogg', 100, 1)
 					visible_message("<span class='danger'>\The [user] forces \the [src] closed!</span>")
 					force_close(1)
 		else
@@ -207,9 +236,10 @@
 // Proc: attack_generic()
 // Parameters: Attacking simple mob, incoming damage.
 // Description: Checks the power or integrity of the blast door, if either have failed, chekcs the damage to determine if the creature would be able to open the door by force. Otherwise, super.
-/obj/machinery/door/blast/attack_generic(var/mob/user, var/damage)
+/obj/machinery/door/blast/attack_generic(mob/living/user, damage)
 	if(stat & (BROKEN|NOPOWER))
-		if(damage >= 10)
+		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
+			user.set_AI_busy(TRUE) // If the mob doesn't have an AI attached, this won't do anything.
 			if(src.density)
 				visible_message("<span class='danger'>\The [user] starts forcing \the [src] open!</span>")
 				if(do_after(user, 5 SECONDS, src))
@@ -220,6 +250,7 @@
 				if(do_after(user, 2 SECONDS, src))
 					visible_message("<span class='danger'>\The [user] forces \the [src] closed!</span>")
 					force_close(1)
+			user.set_AI_busy(FALSE)
 		else
 			visible_message("<span class='notice'>\The [user] strains fruitlessly to force \the [src] [density ? "open" : "closed"].</span>")
 		return
@@ -238,8 +269,7 @@
 		force_open()
 
 	if(autoclose && src.operating && !(stat & BROKEN || stat & NOPOWER))
-		spawn(150)
-			close()
+		addtimer(CALLBACK(src, .proc/close, 15 SECONDS))
 	return 1
 
 // Proc: close()
@@ -259,12 +289,14 @@
 	if(stat & BROKEN)
 		stat &= ~BROKEN
 
-
-/obj/machinery/door/blast/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
-	if(air_group) return 1
+/*
+// This replicates the old functionality coded into CanPass() for this object, however it appeared to have made blast doors not airtight.
+// If for some reason this is actually needed for something important, uncomment this.
+/obj/machinery/door/blast/CanZASPass(turf/T, is_zone)
+	if(is_zone)
+		return TRUE
 	return ..()
-
-
+*/
 
 // SUBTYPE: Regular
 // Your classical blast door, found almost everywhere.
@@ -289,3 +321,7 @@ obj/machinery/door/blast/regular/open
 	icon_state_closed = "shutter1"
 	icon_state_closing = "shutterc1"
 	icon_state = "shutter1"
+	damage = SHUTTER_CRUSH_DAMAGE
+
+#undef BLAST_DOOR_CRUSH_DAMAGE
+#undef SHUTTER_CRUSH_DAMAGE

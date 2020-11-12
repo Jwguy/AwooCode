@@ -32,7 +32,7 @@
 //	SetStunned(min(stunned, 30))
 	SetParalysis(min(paralysis, 30))
 //	SetWeakened(min(weakened, 20))
-	sleeping = 0
+	SetSleeping(0)
 	adjustBruteLoss(0)
 	adjustToxLoss(0)
 	adjustOxyLoss(0)
@@ -40,7 +40,7 @@
 
 /mob/living/silicon/robot/proc/use_power()
 	// Debug only
-	// world << "DEBUG: life.dm line 35: cyborg use_power() called at tick [controller_iteration]"
+	// to_world("DEBUG: life.dm line 35: cyborg use_power() called at tick [controller_iteration]")
 	used_power_this_tick = 0
 	for(var/V in components)
 		var/datum/robot_component/C = components[V]
@@ -60,7 +60,7 @@
 		src.has_power = 1
 	else
 		if (src.has_power)
-			src << "<font color='red'>You are now running on emergency backup power.</font>"
+			to_chat(src, "<font color='red'>You are now running on emergency backup power.</font>")
 		src.has_power = 0
 		if(lights_on) // Light is on but there is no power!
 			lights_on = 0
@@ -69,7 +69,7 @@
 /mob/living/silicon/robot/handle_regular_status_updates()
 
 	if(src.camera && !scrambledcodes)
-		if(src.stat == 2 || wires.IsIndexCut(BORG_WIRE_CAMERA))
+		if(src.stat == 2 || wires.is_cut(WIRE_BORG_CAMERA))
 			src.camera.set_status(0)
 		else
 			src.camera.set_status(1)
@@ -78,7 +78,7 @@
 
 	if(src.sleeping)
 		Paralyse(3)
-		src.sleeping--
+		AdjustSleeping(-1)
 
 	//if(src.resting) // VOREStation edit. Our borgos would rather not.
 	//	Weaken(5)
@@ -88,7 +88,7 @@
 
 	if (src.stat != 2) //Alive.
 		if (src.paralysis || src.stunned || src.weakened || !src.has_power) //Stunned etc.
-			src.stat = 1
+			src.set_stat(UNCONSCIOUS)
 			if (src.stunned > 0)
 				AdjustStunned(-1)
 			if (src.weakened > 0)
@@ -100,13 +100,12 @@
 				src.blinded = 0
 
 		else	//Not stunned.
-			src.stat = 0
+			src.set_stat(CONSCIOUS)
 
 		AdjustConfused(-1)
 
-	else //Dead.
+	else //Dead or just unconscious.
 		src.blinded = 1
-		src.stat = 2
 
 	if (src.stuttering) src.stuttering--
 
@@ -153,7 +152,14 @@
 
 /mob/living/silicon/robot/handle_regular_hud_updates()
 	var/fullbright = FALSE
-	if (src.stat == 2 || (XRAY in mutations) || (src.sight_mode & BORGXRAY))
+	var/seemeson = FALSE
+
+	var/area/A = get_area(src)
+	if(A?.no_spoilers)
+		disable_spoiler_vision()
+
+
+	if (src.stat == DEAD || (XRAY in mutations) || (src.sight_mode & BORGXRAY))
 		src.sight |= SEE_TURFS
 		src.sight |= SEE_MOBS
 		src.sight |= SEE_OBJS
@@ -170,6 +176,7 @@
 		src.see_in_dark = 8
 		see_invisible = SEE_INVISIBLE_MINIMUM
 		fullbright = TRUE
+		seemeson = TRUE
 	else if (src.sight_mode & BORGMATERIAL)
 		src.sight |= SEE_OBJS
 		src.see_in_dark = 8
@@ -186,14 +193,16 @@
 		src.sight &= ~SEE_OBJS
 		src.see_in_dark = 8
 		src.see_invisible = SEE_INVISIBLE_NOLIGHTING
-	else if (src.stat != 2)
+	else if (src.stat != DEAD)
 		src.sight &= ~SEE_MOBS
 		src.sight &= ~SEE_TURFS
 		src.sight &= ~SEE_OBJS
 		src.see_in_dark = 8 			 // see_in_dark means you can FAINTLY see in the dark, humans have a range of 3 or so, tajaran have it at 8
 		src.see_invisible = SEE_INVISIBLE_LIVING // This is normal vision (25), setting it lower for normal vision means you don't "see" things like darkness since darkness
 							 // has a "invisible" value of 15
+
 	plane_holder.set_vis(VIS_FULLBRIGHT,fullbright)
+	plane_holder.set_vis(VIS_MESONS,seemeson)
 	..()
 
 	if (src.healths)
@@ -246,35 +255,22 @@
 				src.mind.special_role = "traitor"
 				traitors.current_antagonists |= src.mind
 
-	if (src.cells)
-		if (src.cell)
-			var/cellcharge = src.cell.charge/src.cell.maxcharge
-			switch(cellcharge)
-				if(0.75 to INFINITY)
-					src.cells.icon_state = "charge4"
-				if(0.5 to 0.75)
-					src.cells.icon_state = "charge3"
-				if(0.25 to 0.5)
-					src.cells.icon_state = "charge2"
-				if(0 to 0.25)
-					src.cells.icon_state = "charge1"
-				else
-					src.cells.icon_state = "charge0"
-		else
-			src.cells.icon_state = "charge-empty"
+	update_cell()
 
-	if(bodytemp)
-		switch(src.bodytemperature) //310.055 optimal body temp
-			if(335 to INFINITY)
-				src.bodytemp.icon_state = "temp2"
-			if(320 to 335)
-				src.bodytemp.icon_state = "temp1"
-			if(300 to 320)
-				src.bodytemp.icon_state = "temp0"
-			if(260 to 300)
-				src.bodytemp.icon_state = "temp-1"
+	var/turf/T = get_turf(src)
+	var/datum/gas_mixture/environment = T.return_air()
+	if(environment)
+		switch(environment.temperature) //310.055 optimal body temp
+			if(400 to INFINITY)
+				throw_alert("temp", /obj/screen/alert/hot/robot, 2)
+			if(360 to 400)
+				throw_alert("temp", /obj/screen/alert/hot/robot, 1)
+			if(260 to 360)
+				clear_alert("temp")
+			if(200 to 260)
+				throw_alert("temp", /obj/screen/alert/cold/robot, 1)
 			else
-				src.bodytemp.icon_state = "temp-2"
+				throw_alert("temp", /obj/screen/alert/cold/robot, 2)
 
 //Oxygen and fire does nothing yet!!
 //	if (src.oxygen) src.oxygen.icon_state = "oxy[src.oxygen_alert ? 1 : 0]"
@@ -296,20 +292,43 @@
 		if(client && !client.adminobs)
 			reset_view(null)
 
+	if(emagged)
+		throw_alert("hacked", /obj/screen/alert/hacked)
+	else
+		clear_alert("hacked")
+
 	return 1
 
+/mob/living/silicon/robot/proc/update_cell()
+	if(cell)
+		var/cellcharge = cell.charge/cell.maxcharge
+		switch(cellcharge)
+			if(0.75 to INFINITY)
+				clear_alert("charge")
+			if(0.5 to 0.75)
+				throw_alert("charge", /obj/screen/alert/lowcell, 1)
+			if(0.25 to 0.5)
+				throw_alert("charge", /obj/screen/alert/lowcell, 2)
+			if(0.01 to 0.25)
+				throw_alert("charge", /obj/screen/alert/lowcell, 3)
+			else
+				throw_alert("charge", /obj/screen/alert/emptycell)
+	else
+		throw_alert("charge", /obj/screen/alert/nocell)
+
+
 /mob/living/silicon/robot/proc/update_items()
-	if (src.client)
-		src.client.screen -= src.contents
-		for(var/obj/I in src.contents)
+	if(client)
+		client.screen -= contents
+		for(var/obj/I in contents)
 			if(I && !(istype(I,/obj/item/weapon/cell) || istype(I,/obj/item/device/radio)  || istype(I,/obj/machinery/camera) || istype(I,/obj/item/device/mmi)))
-				src.client.screen += I
-	if(src.module_state_1)
-		src.module_state_1:screen_loc = ui_inv1
-	if(src.module_state_2)
-		src.module_state_2:screen_loc = ui_inv2
-	if(src.module_state_3)
-		src.module_state_3:screen_loc = ui_inv3
+				client.screen += I
+	if(module_state_1)
+		module_state_1:screen_loc = ui_inv1
+	if(module_state_2)
+		module_state_2:screen_loc = ui_inv2
+	if(module_state_3)
+		module_state_3:screen_loc = ui_inv3
 	updateicon()
 
 /mob/living/silicon/robot/proc/process_killswitch()
@@ -317,7 +336,7 @@
 		killswitch_time --
 		if(killswitch_time <= 0)
 			if(src.client)
-				src << "<span class='danger'>Killswitch Activated</span>"
+				to_chat(src, "<span class='danger'>Killswitch Activated</span>")
 			killswitch = 0
 			spawn(5)
 				gib()
@@ -328,7 +347,7 @@
 		weaponlock_time --
 		if(weaponlock_time <= 0)
 			if(src.client)
-				src << "<span class='danger'>Weapon Lock Timed Out!</span>"
+				to_chat(src, "<span class='danger'>Weapon Lock Timed Out!</span>")
 			weapon_lock = 0
 			weaponlock_time = 120
 

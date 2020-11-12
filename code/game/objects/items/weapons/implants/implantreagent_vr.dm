@@ -31,18 +31,19 @@
 	return
 
 /obj/item/weapon/implant/reagent_generator/post_implant(mob/living/carbon/source)
-	processing_objects += src
+	START_PROCESSING(SSobj, src)
 	to_chat(source, "<span class='notice'>You implant [source] with \the [src].</span>")
 	assigned_proc = new assigned_proc(source, verb_name, verb_desc)
 	return 1
 
 /obj/item/weapon/implant/reagent_generator/process()
 	var/before_gen
-	if(imp_in && generated_reagents)
+	if(isliving(imp_in) && generated_reagents)
 		before_gen = reagents.total_volume
+		var/mob/living/L = imp_in
 		if(reagents.total_volume < reagents.maximum_volume)
-			if(imp_in.nutrition >= gen_cost)
-				do_generation()
+			if(L.nutrition >= gen_cost)
+				do_generation(L)
 		else
 			return
 	else
@@ -55,8 +56,8 @@
 		else if(reagents.total_volume == reagents.maximum_volume && before_gen < reagents.maximum_volume)
 			to_chat(imp_in, "<span class='warning'>[pick(full_message)]</span>")
 
-/obj/item/weapon/implant/reagent_generator/proc/do_generation()
-	imp_in.nutrition -= gen_cost
+/obj/item/weapon/implant/reagent_generator/proc/do_generation(var/mob/living/L)
+	L.adjust_nutrition(-gen_cost)
 	for(var/reagent in generated_reagents)
 		reagents.add_reagent(reagent, generated_reagents[reagent])
 
@@ -69,7 +70,7 @@
 	do_reagent_implant(usr)
 
 /mob/living/carbon/human/proc/do_reagent_implant(var/mob/living/carbon/human/user = usr)
-	if(!isliving(user) || !user.canClick())
+	if(!isliving(user) || !user.checkClickCooldown())
 		return
 
 	if(user.incapacitated() || user.stat > CONSCIOUS)

@@ -4,27 +4,27 @@
 	icon = 'icons/misc/mark.dmi'
 	icon_state = "rup"
 	var/spawn_nothing_percentage = 0 // this variable determines the likelyhood that this random object will not spawn anything
+	var/drop_get_turf = TRUE
 
 // creates a new object and deletes itself
-/obj/random/New()
-	..()
-	spawn()
-		if(istype(src.loc, /obj/structure/loot_pile)) //Spawning from a lootpile is weird, need to wait until we're out of it to do our work.
-			while(istype(src.loc, /obj/structure/loot_pile))
-				sleep(1)
-		if (!prob(spawn_nothing_percentage))
-			spawn_item()
-		qdel(src)
+/obj/random/Initialize()
+	. = ..()
+	if (!prob(spawn_nothing_percentage))
+		spawn_item()
+	return INITIALIZE_HINT_QDEL
 
 // this function should return a specific item to spawn
 /obj/random/proc/item_to_spawn()
 	return 0
 
+/obj/random/drop_location()
+	return drop_get_turf? get_turf(src) : ..()
+
 // creates the random item
 /obj/random/proc/spawn_item()
 	var/build_path = item_to_spawn()
 
-	var/atom/A = new build_path(src.loc)
+	var/atom/A = new build_path(drop_location())
 	if(pixel_x || pixel_y)
 		A.pixel_x = pixel_x
 		A.pixel_y = pixel_y
@@ -48,7 +48,6 @@ var/list/random_useful_
 	if(prob(70)) // Misc. junk
 		if(!random_junk_)
 			random_junk_ = subtypesof(/obj/item/trash)
-			random_junk_ += typesof(/obj/item/weapon/cigbutt)
 			random_junk_ += /obj/effect/decal/cleanable/spiderling_remains
 			random_junk_ += /obj/effect/decal/remains/mouse
 			random_junk_ += /obj/effect/decal/remains/robot
@@ -100,7 +99,7 @@ var/list/multi_point_spawns
 	var/id     // Group id
 	var/weight // Probability weight for this spawn point
 
-/obj/random_multi/initialize()
+/obj/random_multi/Initialize()
 	. = ..()
 	weight = max(1, round(weight))
 

@@ -4,17 +4,20 @@
 	icon = 'icons/obj/clothing/ties.dmi'
 	icon_state = "bluetie"
 	item_state_slots = list(slot_r_hand_str = "", slot_l_hand_str = "")
+	appearance_flags = RESET_COLOR	// Stops has_suit's color from being multiplied onto the accessory
 	slot_flags = SLOT_TIE
 	w_class = ITEMSIZE_SMALL
 	var/slot = ACCESSORY_SLOT_DECOR
-	var/obj/item/clothing/has_suit = null		//the suit the tie may be attached to
-	var/image/inv_overlay = null	//overlay used when attached to clothing.
+	var/obj/item/clothing/has_suit = null		// The suit the tie may be attached to
+	var/image/inv_overlay = null				// Overlay used when attached to clothing.
 	var/image/mob_overlay = null
 	var/overlay_state = null
 	var/concealed_holster = 0
-	var/mob/living/carbon/human/wearer = null //To check if the wearer changes, so species spritesheets change properly.
-
+	var/mob/living/carbon/human/wearer = null 	// To check if the wearer changes, so species spritesheets change properly.
+	var/list/on_rolled = list()					// Used when jumpsuit sleevels are rolled ("rolled" entry) or it's rolled down ("down"). Set to "none" to hide in those states.
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/mob/species/seromi/ties.dmi') //Teshari can into webbing, too!
+	drop_sound = 'sound/items/drop/accessory.ogg'
+	pickup_sound = 'sound/items/pickup/accessory.ogg'
 
 /obj/item/clothing/accessory/Destroy()
 	on_removed()
@@ -24,39 +27,51 @@
 	if(!inv_overlay)
 		var/tmp_icon_state = "[overlay_state? "[overlay_state]" : "[icon_state]"]"
 		if(icon_override)
-			if("[tmp_icon_state]_tie" in icon_states(icon_override))
+			if("[tmp_icon_state]_tie" in cached_icon_states(icon_override))
 				tmp_icon_state = "[tmp_icon_state]_tie"
 			inv_overlay = image(icon = icon_override, icon_state = tmp_icon_state, dir = SOUTH)
 		else
 			inv_overlay = image(icon = INV_ACCESSORIES_DEF_ICON, icon_state = tmp_icon_state, dir = SOUTH)
+
+		inv_overlay.color = src.color
+		inv_overlay.appearance_flags = appearance_flags	// Stops has_suit's color from being multiplied onto the accessory
 	return inv_overlay
 
 /obj/item/clothing/accessory/proc/get_mob_overlay()
-	if(!mob_overlay || has_suit.loc != wearer)
-		var/tmp_icon_state = "[overlay_state? "[overlay_state]" : "[icon_state]"]"
-		if(ishuman(has_suit.loc))
-			wearer = has_suit.loc
-		else
-			wearer = null
+	if(!istype(loc,/obj/item/clothing/))	//don't need special handling if it's worn as normal item.
+		return ..()
+	var/tmp_icon_state = "[overlay_state? "[overlay_state]" : "[icon_state]"]"
+	if(ishuman(has_suit.loc))
+		wearer = has_suit.loc
+	else
+		wearer = null
 
-		if(icon_override)
-			if("[tmp_icon_state]_mob" in icon_states(icon_override))
-				tmp_icon_state = "[tmp_icon_state]_mob"
-			mob_overlay = image("icon" = icon_override, "icon_state" = "[tmp_icon_state]")
-		else if(wearer && sprite_sheets[wearer.species.get_bodytype(wearer)]) //Teshari can finally into webbing, too!
-			mob_overlay = image("icon" = sprite_sheets[wearer.species.get_bodytype(wearer)], "icon_state" = "[tmp_icon_state]")
-		else
-			mob_overlay = image("icon" = INV_ACCESSORIES_DEF_ICON, "icon_state" = "[tmp_icon_state]")
-		if(addblends)
-			var/icon/base = new/icon("icon" = mob_overlay.icon, "icon_state" = mob_overlay.icon_state)
-			var/addblend_icon = new/icon("icon" = mob_overlay.icon, "icon_state" = src.addblends)
-			if(color)
-				base.Blend(src.color, ICON_MULTIPLY)
-			base.Blend(addblend_icon, ICON_ADD)
-			mob_overlay = image(base)
-		else
-			mob_overlay.color = src.color
+	if(istype(loc,/obj/item/clothing/under))
+		var/obj/item/clothing/under/C = loc
+		if(on_rolled["down"] && C.rolled_down > 0)
+			tmp_icon_state = on_rolled["down"]
+		else if(on_rolled["rolled"] && C.rolled_sleeves > 0)
+			tmp_icon_state = on_rolled["rolled"]
 
+	if(icon_override)
+		if("[tmp_icon_state]_mob" in cached_icon_states(icon_override))
+			tmp_icon_state = "[tmp_icon_state]_mob"
+		mob_overlay = image("icon" = icon_override, "icon_state" = "[tmp_icon_state]")
+	else if(wearer && sprite_sheets[wearer.species.get_bodytype(wearer)]) //Teshari can finally into webbing, too!
+		mob_overlay = image("icon" = sprite_sheets[wearer.species.get_bodytype(wearer)], "icon_state" = "[tmp_icon_state]")
+	else
+		mob_overlay = image("icon" = INV_ACCESSORIES_DEF_ICON, "icon_state" = "[tmp_icon_state]")
+	if(addblends)
+		var/icon/base = new/icon("icon" = mob_overlay.icon, "icon_state" = mob_overlay.icon_state)
+		var/addblend_icon = new/icon("icon" = mob_overlay.icon, "icon_state" = src.addblends)
+		if(color)
+			base.Blend(src.color, ICON_MULTIPLY)
+		base.Blend(addblend_icon, ICON_ADD)
+		mob_overlay = image(base)
+	else
+		mob_overlay.color = src.color
+
+	mob_overlay.appearance_flags = appearance_flags	// Stops has_suit's color from being multiplied onto the accessory
 	return mob_overlay
 
 //when user attached an accessory to S
@@ -64,22 +79,22 @@
 	if(!istype(S))
 		return
 	has_suit = S
-	loc = has_suit
-	has_suit.overlays += get_inv_overlay()
+	src.forceMove(S)
+	has_suit.add_overlay(get_inv_overlay())
 
 	if(user)
-		user << "<span class='notice'>You attach \the [src] to \the [has_suit].</span>"
+		to_chat(user, "<span class='notice'>You attach \the [src] to \the [has_suit].</span>")
 		add_fingerprint(user)
 
 /obj/item/clothing/accessory/proc/on_removed(var/mob/user)
 	if(!has_suit)
 		return
-	has_suit.overlays -= get_inv_overlay()
+	has_suit.cut_overlay(get_inv_overlay())
 	has_suit = null
 	if(user)
 		usr.put_in_hands(src)
 		add_fingerprint(user)
-	else
+	else if(get_turf(src))		//We actually exist in space
 		forceMove(get_turf(src))
 
 //default attackby behaviour
@@ -209,6 +224,8 @@
 	desc = "A bronze medal."
 	icon_state = "bronze"
 	slot = ACCESSORY_SLOT_MEDAL
+	drop_sound = 'sound/items/drop/accessory.ogg'
+	pickup_sound = 'sound/items/pickup/accessory.ogg'
 
 /obj/item/clothing/accessory/medal/conduct
 	name = "distinguished conduct medal"
@@ -317,6 +334,12 @@
 	name = "striped blue scarf"
 	icon_state = "stripedbluescarf"
 
+/obj/item/clothing/accessory/scarf/teshari/neckscarf
+	name = "small neckscarf"
+	desc = "a neckscarf that is too small for a human's neck"
+	icon_state = "tesh_neckscarf"
+	species_restricted = list(SPECIES_TESHARI)
+
 //bracelets
 
 /obj/item/clothing/accessory/bracelet
@@ -395,3 +418,21 @@
 	..(newloc, "glass")
 
 	..()
+
+/obj/item/clothing/accessory/halfcape
+	name = "half cape"
+	desc = "A tasteful half-cape, suitible for European nobles and retro anime protagonists."
+	icon_state = "halfcape"
+	slot = ACCESSORY_SLOT_DECOR
+
+/obj/item/clothing/accessory/fullcape
+	name = "full cape"
+	desc = "A gaudy full cape. You're thinking about wearing it, aren't you?"
+	icon_state = "fullcape"
+	slot = ACCESSORY_SLOT_DECOR
+
+/obj/item/clothing/accessory/sash
+	name = "sash"
+	desc = "A plain, unadorned sash."
+	icon_state = "sash"
+	slot = ACCESSORY_SLOT_OVER

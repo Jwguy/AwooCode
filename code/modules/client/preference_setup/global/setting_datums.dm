@@ -76,7 +76,7 @@ var/list/_client_preferences_by_type
 	if(!enabled)
 		preference_mob << sound(null, repeat = 0, wait = 0, volume = 0, channel = 1)
 		preference_mob << sound(null, repeat = 0, wait = 0, volume = 0, channel = 2)
-
+//VOREStation Add - Need to put it here because it should be ordered riiiight here.
 /datum/client_preference/play_jukebox
 	description ="Play jukebox music"
 	key = "SOUND_JUKEBOX"
@@ -86,18 +86,43 @@ var/list/_client_preferences_by_type
 		preference_mob.stop_all_music()
 	else
 		preference_mob.update_music()
-//VOREStation Add - Need to put it here because it should be ordered riiiight here.
+
 /datum/client_preference/eating_noises
 	description = "Eating Noises"
 	key = "EATING_NOISES"
 	enabled_description = "Noisy"
 	disabled_description = "Silent"
+
 /datum/client_preference/digestion_noises
 	description = "Digestion Noises"
 	key = "DIGEST_NOISES"
 	enabled_description = "Noisy"
 	disabled_description = "Silent"
+
+/datum/client_preference/emote_noises
+	description = "Emote Noises" //MERP
+	key = "EMOTE_NOISES"
+	enabled_description = "Noisy"
+	disabled_description = "Silent"
+/datum/client_preference/whisubtle_vis
+	description = "Whi/Subtles Ghost Visible" 
+	key = "WHISUBTLE_VIS"
+	enabled_description = "Visible"
+	disabled_description = "Hidden"
+	enabled_by_default = FALSE
 //VOREStation Add End
+/datum/client_preference/weather_sounds
+	description ="Weather sounds"
+	key = "SOUND_WEATHER"
+	enabled_description = "Audible"
+	disabled_description = "Silent"
+
+/datum/client_preference/supermatter_hum
+	description ="Supermatter hum"
+	key = "SOUND_SUPERMATTER"
+	enabled_description = "Audible"
+	disabled_description = "Silent"
+
 /datum/client_preference/ghost_ears
 	description ="Ghost ears"
 	key = "CHAT_GHOSTEARS"
@@ -122,9 +147,45 @@ var/list/_client_preferences_by_type
 	enabled_description = "Show"
 	disabled_description = "Hide"
 
+/datum/client_preference/air_pump_noise
+	description ="Air Pump Ambient Noise"
+	key = "SOUND_AIRPUMP"
+	enabled_description = "Audible"
+	disabled_description = "Silent"
+	
+/datum/client_preference/old_door_sounds
+	description ="Old Door Sounds"
+	key = "SOUND_OLDDOORS"
+	enabled_description = "Old"
+	disabled_description = "New"
+
+/datum/client_preference/department_door_sounds
+	description ="Department-Specific Door Sounds"
+	key = "SOUND_DEPARTMENTDOORS"
+	enabled_description = "Enabled"
+	disabled_description = "Disabled"
+
+/datum/client_preference/pickup_sounds
+	description = "Picked Up Item Sounds"
+	key = "SOUND_PICKED"
+	enabled_description = "Enabled"
+	disabled_description = "Disabled"
+
+/datum/client_preference/drop_sounds
+	description = "Dropped Item Sounds"
+	key = "SOUND_DROPPED"
+	enabled_description = "Enabled"
+	disabled_description = "Disabled"
+
 /datum/client_preference/mob_tooltips
 	description ="Mob tooltips"
 	key = "MOB_TOOLTIPS"
+	enabled_description = "Show"
+	disabled_description = "Hide"
+
+/datum/client_preference/inv_tooltips
+	description ="Inventory tooltips"
+	key = "INV_TOOLTIPS"
 	enabled_description = "Show"
 	disabled_description = "Hide"
 
@@ -133,6 +194,12 @@ var/list/_client_preferences_by_type
 	key = "ATTACK_ICONS"
 	enabled_description = "Show"
 	disabled_description = "Hide"
+
+/datum/client_preference/precision_placement
+	description ="Precision Placement"
+	key = "PRECISE_PLACEMENT"
+	enabled_description = "Active"
+	disabled_description = "Inactive"
 
 /datum/client_preference/hotkeys_default
 	description ="Hotkeys Default"
@@ -211,11 +278,29 @@ var/list/_client_preferences_by_type
 	description ="Hear In-game Instruments"
 	key = "SOUND_INSTRUMENT"
 
+/datum/client_preference/vchat_enable
+	description = "Enable/Disable VChat"
+	key = "VCHAT_ENABLE"
+	enabled_description =  "Enabled"
+	disabled_description = "Disabled"
+
+/datum/client_preference/status_indicators
+	description = "Status Indicators"
+	key = "SHOW_STATUS"
+	enabled_description = "Show"
+	disabled_description = "Hide"
+
+/datum/client_preference/status_indicators/toggled(mob/preference_mob, enabled)
+	. = ..()
+	if(preference_mob && preference_mob.plane_holder)
+		var/datum/plane_holder/PH = preference_mob.plane_holder
+		PH.set_vis(VIS_STATUS, enabled)
+
 /********************
 * Staff Preferences *
 ********************/
 /datum/client_preference/admin/may_toggle(var/mob/preference_mob)
-	return check_rights(R_ADMIN, 0, preference_mob)
+	return check_rights(R_ADMIN|R_EVENT, 0, preference_mob)
 
 /datum/client_preference/mod/may_toggle(var/mob/preference_mob)
 	return check_rights(R_MOD|R_ADMIN, 0, preference_mob)

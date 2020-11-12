@@ -6,6 +6,8 @@
 	icon_state = "rig0-engineering"
 	item_state_slots = list(slot_r_hand_str = "eng_helm", slot_l_hand_str = "eng_helm")
 	armor = list(melee = 40, bullet = 5, laser = 20, energy = 5, bomb = 35, bio = 100, rad = 80)
+	min_pressure_protection = 0  * ONE_ATMOSPHERE
+	max_pressure_protection = 15 * ONE_ATMOSPHERE
 
 /obj/item/clothing/suit/space/void/engineering
 	name = "engineering voidsuit"
@@ -15,6 +17,8 @@
 	slowdown = 1
 	armor = list(melee = 40, bullet = 5, laser = 20, energy = 5, bomb = 35, bio = 100, rad = 80)
 	allowed = list(/obj/item/device/flashlight,/obj/item/weapon/tank,/obj/item/device/suit_cooling_unit,/obj/item/weapon/storage/bag/ore,/obj/item/device/t_scanner,/obj/item/weapon/pickaxe, /obj/item/weapon/rcd)
+	min_pressure_protection = 0  * ONE_ATMOSPHERE
+	max_pressure_protection = 15 * ONE_ATMOSPHERE
 
 //Engineering HAZMAT Voidsuit
 
@@ -90,6 +94,7 @@
 	desc = "A special suit that protects against hazardous, low pressure environments. Has reinforced plating."
 	icon_state = "rig-mining"
 	item_state_slots = list(slot_r_hand_str = "mining_voidsuit", slot_l_hand_str = "mining_voidsuit")
+	allowed = list(/obj/item/device/flashlight,/obj/item/weapon/tank,/obj/item/device/suit_cooling_unit,/obj/item/weapon/pickaxe)
 	armor = list(melee = 50, bullet = 5, laser = 20, energy = 5, bomb = 55, bio = 100, rad = 20)
 
 //Mining Surplus Voidsuit
@@ -153,17 +158,75 @@
 //Medical Streamlined Voidsuit
 /obj/item/clothing/head/helmet/space/void/medical/alt
 	name = "streamlined medical voidsuit helmet"
-	desc = "A trendy, lightly radiation-shielded voidsuit helmet trimmed in a sleek blue."
+	desc = "A trendy, lightly radiation-shielded voidsuit helmet trimmed in a sleek blue. It possesses advanced autoadaptive systems and doesn't need to be cycled to change species fit for most large humanoids."
 	icon_state = "rig0-medicalalt"
 	armor = list(melee = 20, bullet = 5, laser = 20,energy = 5, bomb = 15, bio = 100, rad = 30)
 	light_overlay = "helmet_light_dual_blue"
+	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI)	//this thing can autoadapt to most species, but diona/vox are too weird, and tesh are too small
+	no_cycle = TRUE
+
+/obj/item/clothing/head/helmet/space/void/medical/alt
+	sprite_sheets = list(
+		SPECIES_HUMAN			= 'icons/mob/head.dmi',
+		SPECIES_TAJ 			= 'icons/mob/species/tajaran/helmet.dmi',
+		SPECIES_SKRELL 			= 'icons/mob/species/skrell/helmet.dmi',
+		SPECIES_UNATHI 			= 'icons/mob/species/unathi/helmet.dmi'
+		)
+	sprite_sheets_obj = list(
+		SPECIES_TAJ 			= 'icons/obj/clothing/hats.dmi',
+		SPECIES_SKRELL			= 'icons/obj/clothing/hats.dmi',
+		SPECIES_UNATHI			= 'icons/obj/clothing/hats.dmi'
+		)
+
+/obj/item/clothing/head/helmet/space/void/medical/alt/tesh
+	name = "streamlined teshari medical voidsuit helmet"
+	desc = "A trendy, lightly radiation-shielded voidsuit helmet trimmed in a sleek blue. This teshari-specific model lacks the autoadaption feature due to the reduced amount of materials."
+	species_restricted = list(SPECIES_TESHARI)
+	no_cycle = FALSE //no autoadaption means it can be refitted
+
+/obj/item/clothing/head/helmet/space/void/medical/alt/tesh
+	sprite_sheets = list(
+		SPECIES_TESHARI			= 'icons/mob/species/seromi/head.dmi'
+		)
+	sprite_sheets_obj = list(
+		SPECIES_TESHARI			= 'icons/obj/clothing/hats.dmi'
+		)
 
 /obj/item/clothing/suit/space/void/medical/alt
-	icon_state = "rig-medicalalt"
 	name = "streamlined medical voidsuit"
-	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion."
+	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion. It possesses advanced autoadaptive systems and doesn't need to be cycled to change species fit for most large humanoids."
+	icon_state = "rig-medicalalt"
 	slowdown = 0
 	armor = list(melee = 20, bullet = 5, laser = 20,energy = 5, bomb = 15, bio = 100, rad = 30)
+	species_restricted = list("exclude",SPECIES_DIONA,SPECIES_VOX,SPECIES_TESHARI)	//this thing can autoadapt, but diona/vox are too weird, and tesh are too small
+	no_cycle = TRUE
+
+/obj/item/clothing/suit/space/void/medical/alt
+	sprite_sheets = list(
+		SPECIES_HUMAN			= 'icons/mob/spacesuit.dmi',
+		SPECIES_TAJ 			= 'icons/mob/species/tajaran/suit.dmi',
+		SPECIES_SKRELL 			= 'icons/mob/species/skrell/suit.dmi',
+		SPECIES_UNATHI 			= 'icons/mob/species/unathi/suit.dmi'
+		)
+	sprite_sheets_obj = list(
+		SPECIES_TAJ			= 'icons/obj/clothing/spacesuits.dmi',
+		SPECIES_SKRELL			= 'icons/obj/clothing/spacesuits.dmi',
+		SPECIES_UNATHI			= 'icons/obj/clothing/spacesuits.dmi'
+		)
+
+/obj/item/clothing/suit/space/void/medical/alt/tesh
+	name = "streamlined teshari medical voidsuit"
+	desc = "A more recent model of Vey-Med voidsuit, exchanging physical protection for fully unencumbered movement and a complete range of motion. This teshari-specific model lacks the autoadaption feature due to the reduced amount of materials."
+	species_restricted = list(SPECIES_TESHARI)
+	no_cycle = FALSE //no autoadaption means it can be refitted
+
+/obj/item/clothing/suit/space/void/medical/alt/tesh
+	sprite_sheets = list(
+		SPECIES_TESHARI			= 'icons/mob/species/seromi/suit.dmi'
+		)
+	sprite_sheets_obj = list(
+		SPECIES_TESHARI			= 'icons/obj/clothing/spacesuits.dmi'
+		)
 
 //Security
 /obj/item/clothing/head/helmet/space/void/security
@@ -188,27 +251,32 @@
 
 /obj/item/clothing/head/helmet/space/void/security/riot
 	name = "crowd control voidsuit helmet"
+	desc = "A heavy-set and ominous looking crowd control suit helmet. Fitted with state of the art shock absorbing materials, to disperse blunt force trauma."
 	icon_state = "rig0-sec_riot"
+	armor = list(melee = 70, bullet = 15, laser = 15, energy = 5, bomb = 40, bio = 100, rad = 10)
 	item_state_slots = list(slot_r_hand_str = "sec_helm_riot", slot_l_hand_str = "sec_helm_riot")
 
 /obj/item/clothing/suit/space/void/security/riot
 	name = "crowd control voidsuit"
+	desc = "A heavy-set and ominous looking crowd control suit. Fitted with state of the art shock absorbing materials, to disperse blunt force trauma."
 	icon_state = "rig-sec_riot"
+	armor = list(melee = 70, bullet = 15, laser = 15, energy = 5, bomb = 40, bio = 100, rad = 10)
 	item_state_slots = list(slot_r_hand_str = "sec_voidsuit_riot", slot_l_hand_str = "sec_voidsuit_riot")
 
 //Security Surplus Voidsuit
 /obj/item/clothing/head/helmet/space/void/security/alt
-	name = "riot security voidsuit helmet"
-	desc = "A somewhat tacky voidsuit helmet, a fact mitigated by heavy armor plating."
+	name = "security EVA voidsuit helmet"
+	desc = "A grey-black voidsuit helmet with red highlights. A little tacky, but it offers better protection against modern firearms and radiation than standard-issue security voidsuit helmets."
+	armor = list(melee = 30, bullet = 40, laser = 40, energy = 25, bomb = 60, bio = 100, rad = 50)
 	icon_state = "rig0-secalt"
-	armor = list(melee = 70, bullet = 20, laser = 30, energy = 5, bomb = 35, bio = 100, rad = 10)
+	item_state_slots = list(slot_r_hand_str = "syndicate-helm-black", slot_l_hand_str = "syndicate-helm-black")
 
 /obj/item/clothing/suit/space/void/security/alt
+	name = "security EVA voidsuit"
+	desc = "A grey-black voidsuit with red highlights. A little tacky, but it offers better protection against modern firearms and radiation than standard-issue security voidsuits."
+	armor = list(melee = 30, bullet = 40, laser = 40, energy = 25, bomb = 60, bio = 100, rad = 50)
 	icon_state = "rig-secalt"
-	name = "riot security voidsuit"
-	desc = "A heavily armored voidsuit, designed to intimidate people who find black intimidating. Surprisingly slimming."
-	armor = list(melee = 70, bullet = 20, laser = 30, energy = 5, bomb = 35, bio = 100, rad = 10)
-	allowed = list(/obj/item/weapon/gun,/obj/item/device/flashlight,/obj/item/weapon/tank,/obj/item/device/suit_cooling_unit,/obj/item/weapon/melee/baton)
+	item_state_slots = list(slot_r_hand_str = "sec_voidsuitTG", slot_l_hand_str = "sec_voidsuitTG")
 
 //Atmospherics
 /obj/item/clothing/head/helmet/space/void/atmos
@@ -219,6 +287,8 @@
 	armor = list(melee = 40, bullet = 5, laser = 20, energy = 5, bomb = 35, bio = 100, rad = 50)
 	max_heat_protection_temperature = FIRE_HELMET_MAX_HEAT_PROTECTION_TEMPERATURE
 	light_overlay = "helmet_light_dual"
+	min_pressure_protection = 0 * ONE_ATMOSPHERE
+	max_pressure_protection = 20* ONE_ATMOSPHERE
 
 /obj/item/clothing/suit/space/void/atmos
 	name = "atmos voidsuit"
@@ -227,6 +297,8 @@
 	item_state_slots = list(slot_r_hand_str = "atmos_voidsuit", slot_l_hand_str = "atmos_voidsuit")
 	armor = list(melee = 40, bullet = 5, laser = 20, energy = 5, bomb = 35, bio = 100, rad = 50)
 	max_heat_protection_temperature = FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE
+	min_pressure_protection = 0 * ONE_ATMOSPHERE
+	max_pressure_protection = 20* ONE_ATMOSPHERE
 
 //Atmospherics Surplus Voidsuit
 

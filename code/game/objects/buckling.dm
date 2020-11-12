@@ -51,20 +51,10 @@
 
 
 /atom/movable/proc/buckle_mob(mob/living/M, forced = FALSE, check_loc = TRUE)
-	if(!buckled_mobs)
-		buckled_mobs = list()
-
-	if(!istype(M))
-		return FALSE
-
 	if(check_loc && M.loc != loc)
 		return FALSE
 
-	if((!can_buckle && !forced) || M.buckled || M.pinned.len || (buckled_mobs.len >= max_buckled_mobs) || (buckle_require_restraints && !M.restrained()))
-		return FALSE
-
-	if(has_buckled_mobs() && buckled_mobs.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
-		to_chat(M, "<span class='notice'>\The [src] can't buckle anymore people.</span>")
+	if(!can_buckle_check(M, forced))
 		return FALSE
 
 	M.buckled = src
@@ -83,6 +73,7 @@
 	//VOREStation Add End
 
 	post_buckle_mob(M)
+	M.throw_alert("buckled", /obj/screen/alert/restrained/buckled, new_master = src)
 	return TRUE
 
 /atom/movable/proc/unbuckle_mob(mob/living/buckled_mob, force = FALSE)
@@ -98,6 +89,7 @@
 		buckled_mob.anchored = initial(buckled_mob.anchored)
 		buckled_mob.update_canmove()
 		buckled_mob.update_floating( buckled_mob.Check_Dense_Object() )
+		buckled_mob.clear_alert("buckled")
 	//	buckled_mob = null
 		buckled_mobs -= buckled_mob
 
@@ -123,12 +115,14 @@
 //Wrapper procs that handle sanity and user feedback
 /atom/movable/proc/user_buckle_mob(mob/living/M, mob/user, var/forced = FALSE, var/silent = FALSE)
 	if(!ticker)
-		user << "<span class='warning'>You can't buckle anyone in before the game starts.</span>"
+		to_chat(user, "<span class='warning'>You can't buckle anyone in before the game starts.</span>")
 		return FALSE // Is this really needed?
 	if(!user.Adjacent(M) || user.restrained() || user.stat || istype(user, /mob/living/silicon/pai))
 		return FALSE
 	if(M in buckled_mobs)
 		to_chat(user, "<span class='warning'>\The [M] is already buckled to \the [src].</span>")
+		return FALSE
+	if(!can_buckle_check(M, forced))
 		return FALSE
 
 	add_fingerprint(user)
@@ -141,6 +135,7 @@
 	//		step_towards(M, src)
 
 	. = buckle_mob(M, forced)
+	playsound(src, 'sound/effects/seatbelt.ogg', 50, 1)
 	if(.)
 		var/reveal_message = list("buckled_mob" = null, "buckled_to" = null) //VORE EDIT: This being a list and messages existing for the buckle target atom.
 		if(!silent)
@@ -168,6 +163,7 @@
 
 /atom/movable/proc/user_unbuckle_mob(mob/living/buckled_mob, mob/user)
 	var/mob/living/M = unbuckle_mob(buckled_mob)
+	playsound(src, 'sound/effects/seatbelt.ogg', 50, 1)
 	if(M)
 		if(M != user)
 			M.visible_message(\
@@ -182,26 +178,31 @@
 		add_fingerprint(user)
 	return M
 
-/atom/movable/proc/handle_buckled_mob_movement(newloc,direct)
-	if(has_buckled_mobs())
-		for(var/A in buckled_mobs)
-			var/mob/living/L = A
-//			if(!L.Move(newloc, direct))
-			if(!L.forceMove(newloc, direct))
-				loc = L.loc
-				last_move = L.last_move
-				L.inertia_dir = last_move
-				return FALSE
-			else
-				L.set_dir(dir)
-	return TRUE
+/atom/movable/proc/handle_buckled_mob_movement(atom/old_loc, direct, movetime)
+	for(var/A in buckled_mobs)
+		var/mob/living/L = A
+		if(!L.Move(loc, direct, movetime))
+			L.forceMove(loc, direct, movetime)
+			L.last_move = last_move
+			L.inertia_dir = last_move
 
-/atom/movable/Move(atom/newloc, direct = 0)
-	. = ..()
-	if(. && has_buckled_mobs() && !handle_buckled_mob_movement(newloc, direct)) //movement failed due to buckled mob(s)
-		. = 0
-	//VOREStation Add
-	else if(. && riding_datum)
-		riding_datum.handle_vehicle_layer()
-		riding_datum.handle_vehicle_offsets()
-	//VOREStation Add End
+		if(!buckle_dir)
+			L.set_dir(dir)
+		else
+			L.set_dir(buckle_dir)
+
+/atom/movable/proc/can_buckle_check(mob/living/M, forced = FALSE)
+	if(!buckled_mobs)
+		buckled_mobs = list()
+
+	if(!istype(M))
+		return FALSE
+
+	if((!can_buckle && !forced) || M.buckled || M.pinned.len || (buckled_mobs.len >= max_buckled_mobs) || (buckle_require_restraints && !M.restrained()))
+		return FALSE
+
+	if(has_buckled_mobs() && buckled_mobs.len >= max_buckled_mobs) //Handles trying to buckle yourself to the chair when someone is on it
+		to_chat(M, "<span class='notice'>\The [src] can't buckle anymore people.</span>")
+		return FALSE
+
+	return TRUE

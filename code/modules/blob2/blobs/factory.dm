@@ -15,7 +15,8 @@
 	var/spore_cooldown = 8 SECONDS
 
 /obj/structure/blob/factory/Destroy()
-	for(var/mob/living/simple_animal/hostile/blob/spore/spore in spores)
+	for(var/mob/living/L in spores)
+		var/mob/living/simple_mob/blob/spore/spore = L
 		if(istype(spore) && spore.factory == src)
 			spore.factory = null
 		else
@@ -31,7 +32,7 @@
 		return
 	flick("blob_factory_glow", src)
 	spore_delay = world.time + spore_cooldown
-	var/mob/living/simple_animal/hostile/blob/spore/S = null
+	var/mob/living/simple_mob/blob/spore/S = null
 	if(overmind)
 		S = new overmind.blob_type.spore_type(src.loc, src)
 		S.faction = "blob"
@@ -39,10 +40,10 @@
 			S.overmind = overmind
 			overmind.blob_mobs.Add(S)
 			if(overmind.blob_type.ranged_spores)
-				S.ranged = TRUE
 				S.projectiletype = overmind.blob_type.spore_projectile
 				S.projectilesound = overmind.blob_type.spore_firesound
-				S.shoot_range = overmind.blob_type.spore_range
+				S.projectile_accuracy = overmind.blob_type.spore_accuracy
+				S.projectile_dispersion = overmind.blob_type.spore_dispersion
 		else //Other mobs don't add themselves in New. Ew.
 			S.nest = src
 			spores += S
@@ -52,3 +53,8 @@
 	name = "sluggish factory blob"
 	max_spores = 4
 	spore_cooldown = 16 SECONDS
+
+/obj/structure/blob/factory/turret	// Produces a single spore slowly, but is intended to be used as a 'mortar' by the blob type.
+	name = "volatile factory blob"
+	max_spores = 1
+	spore_cooldown = 10 SECONDS

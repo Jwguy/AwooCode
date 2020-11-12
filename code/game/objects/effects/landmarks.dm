@@ -24,6 +24,7 @@
 			return
 		if("JoinLate") // Bit difference, since we need the spawn point to move.
 			latejoin += src
+			simulated = 1
 		//	delete_me = 1
 			return
 		if("JoinLateGateway")
@@ -83,7 +84,7 @@
 /obj/effect/landmark/proc/delete()
 	delete_me = 1
 
-/obj/effect/landmark/initialize()
+/obj/effect/landmark/Initialize()
 	. = ..()
 	if(delete_me)
 		return INITIALIZE_HINT_QDEL

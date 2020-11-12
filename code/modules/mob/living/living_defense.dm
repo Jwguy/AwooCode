@@ -13,7 +13,7 @@
 */
 /mob/living/proc/run_armor_check(var/def_zone = null, var/attack_flag = "melee", var/armour_pen = 0, var/absorb_text = null, var/soften_text = null)
 	if(Debug2)
-		world.log << "## DEBUG: getarmor() was called."
+		to_world_log("## DEBUG: getarmor() was called.")
 
 	if(armour_pen >= 100)
 		return 0 //might as well just skip the processing
@@ -23,23 +23,23 @@
 		var/armor_variance_range = round(armor * 0.25) //Armor's effectiveness has a +25%/-25% variance.
 		var/armor_variance = rand(-armor_variance_range, armor_variance_range) //Get a random number between -25% and +25% of the armor's base value
 		if(Debug2)
-			world.log << "## DEBUG: The range of armor variance is [armor_variance_range].  The variance picked by RNG is [armor_variance]."
+			to_world_log("## DEBUG: The range of armor variance is [armor_variance_range].  The variance picked by RNG is [armor_variance].")
 
 		armor = min(armor + armor_variance, 100)	//Now we calcuate damage using the new armor percentage.
 		armor = max(armor - armour_pen, 0)			//Armor pen makes armor less effective.
 		if(armor >= 100)
 			if(absorb_text)
-				src << "<span class='danger'>[absorb_text]</span>"
+				to_chat(src, "<span class='danger'>[absorb_text]</span>")
 			else
-				src << "<span class='danger'>Your armor absorbs the blow!</span>"
+				to_chat(src, "<span class='danger'>Your armor absorbs the blow!</span>")
 
 		else if(armor > 0)
 			if(soften_text)
-				src << "<span class='danger'>[soften_text]</span>"
+				to_chat(src, "<span class='danger'>[soften_text]</span>")
 			else
-				src << "<span class='danger'>Your armor softens the blow!</span>"
+				to_chat(src, "<span class='danger'>Your armor softens the blow!</span>")
 		if(Debug2)
-			world.log << "## DEBUG: Armor when [src] was attacked was [armor]."
+			to_world_log("## DEBUG: Armor when [src] was attacked was [armor].")
 	return armor
 
 /*
@@ -92,6 +92,13 @@
 /mob/living/proc/getsoak(var/def_zone, var/type)
 	return 0
 
+// Clicking with an empty hand
+/mob/living/attack_hand(mob/living/L)
+	..()
+	if(istype(L) && L.a_intent != I_HELP)
+		if(ai_holder) // Using disarm, grab, or harm intent is considered a hostile action to the mob's AI.
+			ai_holder.react_to_attack(L)
+
 /mob/living/bullet_act(var/obj/item/projectile/P, var/def_zone)
 
 	//Being hit while using a deadman switch
@@ -101,6 +108,9 @@
 			log_and_message_admins("has triggered a signaler deadman's switch")
 			src.visible_message("<font color='red'>[src] triggers their deadman's switch!</font>")
 			signaler.signal()
+
+	if(ai_holder && P.firer)
+		ai_holder.react_to_attack(P.firer)
 
 	//Armor
 	var/soaked = get_armor_soak(def_zone, P.check_armour, P.armor_penetration)
@@ -119,7 +129,6 @@
 	//Stun Beams
 	if(P.taser_effect)
 		stun_effect_act(0, P.agony, def_zone, P)
-		src <<"<font color='red'>You have been hit by [P]!</font>"
 		if(!P.nodamage)
 			apply_damage(P.damage, P.damage_type, def_zone, absorb, soaked, 0, P, sharp=proj_sharp, edge=proj_edge)
 		qdel(P)
@@ -158,6 +167,15 @@
 
 /mob/living/emp_act(severity)
 	var/list/L = src.get_contents()
+
+	if(LAZYLEN(modifiers))
+		for(var/datum/modifier/M in modifiers)
+			if(!isnull(M.emp_modifier))
+				severity = CLAMP(severity + M.emp_modifier, 1, 5)
+
+	if(severity == 5)	// Effectively nullified.
+		return
+
 	for(var/obj/O in L)
 		O.emp_act(severity)
 	..()
@@ -191,11 +209,14 @@
 		damage *= 0.66 // Take 2/3s as much damage.
 
 	visible_message("<span class='danger'>\The [B] [attack_verb] \the [src]!</span>", "<span class='danger'>[attack_message]!</span>")
-	playsound(loc, 'sound/effects/attackblob.ogg', 50, 1)
+	playsound(src, 'sound/effects/attackblob.ogg', 50, 1)
 
 	//Armor
 	var/soaked = get_armor_soak(def_zone, armor_check, armor_pen)
 	var/absorb = run_armor_check(def_zone, armor_check, armor_pen)
+
+	if(ai_holder)
+		ai_holder.react_to_attack(B)
 
 	apply_damage(damage, damage_type, def_zone, absorb, soaked)
 
@@ -205,6 +226,9 @@
 //Called when the mob is hit with an item in combat. Returns the blocked result
 /mob/living/proc/hit_with_weapon(obj/item/I, mob/living/user, var/effective_force, var/hit_zone)
 	visible_message("<span class='danger'>[src] has been [I.attack_verb.len? pick(I.attack_verb) : "attacked"] with [I.name] by [user]!</span>")
+
+	if(ai_holder)
+		ai_holder.react_to_attack(user)
 
 	var/soaked = get_armor_soak(hit_zone, "melee")
 	var/blocked = run_armor_check(hit_zone, "melee")
@@ -267,6 +291,8 @@
 			var/client/assailant = M.client
 			if(assailant)
 				add_attack_logs(M,src,"Hit by thrown [O.name]")
+			if(ai_holder)
+				ai_holder.react_to_attack(O.thrower)
 
 		// Begin BS12 momentum-transfer code.
 		var/mass = 1.5
@@ -287,7 +313,7 @@
 				if(soaked >= round(throw_damage*0.8))
 					return
 
-				//Handles embedding for non-humans and simple_animals.
+				//Handles embedding for non-humans and simple_mobs.
 				embed(O)
 
 				var/turf/T = near_wall(dir,2)
@@ -302,6 +328,7 @@
 	O.loc = src
 	src.embedded += O
 	src.verbs += /mob/proc/yank_out_object
+	throw_alert("embeddedobject", /obj/screen/alert/embeddedobject)
 
 //This is called when the mob is thrown into a dense turf
 /mob/living/proc/turf_collision(var/turf/T, var/speed)
@@ -324,12 +351,13 @@
 // End BS12 momentum-transfer code.
 
 /mob/living/attack_generic(var/mob/user, var/damage, var/attack_message)
-
 	if(!damage)
 		return
 
 	adjustBruteLoss(damage)
-	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_animal attacks
+	add_attack_logs(user,src,"Generic attack (probably animal)", admin_notify = FALSE) //Usually due to simple_mob attacks
+	if(ai_holder)
+		ai_holder.react_to_attack(user)
 	src.visible_message("<span class='danger'>[user] has [attack_message] [src]!</span>")
 	user.do_attack_animation(src)
 	spawn(1) updatehealth()
@@ -339,6 +367,7 @@
 	if(fire_stacks > 0 && !on_fire)
 		on_fire = 1
 		handle_light()
+		throw_alert("fire", /obj/screen/alert/fire)
 		update_fire()
 
 /mob/living/proc/ExtinguishMob()
@@ -346,13 +375,17 @@
 		on_fire = 0
 		fire_stacks = 0
 		handle_light()
+		clear_alert("fire")
 		update_fire()
+
+	if(has_modifier_of_type(/datum/modifier/fire))
+		remove_modifiers_of_type(/datum/modifier/fire)
 
 /mob/living/proc/update_fire()
 	return
 
 /mob/living/proc/adjust_fire_stacks(add_fire_stacks) //Adjusting the amount of fire_stacks we have on person
-    fire_stacks = Clamp(fire_stacks + add_fire_stacks, FIRE_MIN_STACKS, FIRE_MAX_STACKS)
+    fire_stacks = CLAMP(fire_stacks + add_fire_stacks, FIRE_MIN_STACKS, FIRE_MAX_STACKS)
 
 /mob/living/proc/handle_fire()
 	if(fire_stacks < 0)
@@ -412,6 +445,15 @@
 /mob/living/proc/get_heat_protection()
 	return 0
 
+/mob/living/proc/get_shock_protection()
+	return 0
+
+/mob/living/proc/get_water_protection()
+	return 1 // Water won't hurt most things.
+
+/mob/living/proc/get_poison_protection()
+	return 0
+
 //Finds the effective temperature that the mob is burning at.
 /mob/living/proc/fire_burn_temperature()
 	if (fire_stacks <= 0)
@@ -420,6 +462,22 @@
 	//Scale quadratically so that single digit numbers of fire stacks don't burn ridiculously hot.
 	//lower limit of 700 K, same as matches and roughly the temperature of a cool flame.
 	return max(2.25*round(FIRESUIT_MAX_HEAT_PROTECTION_TEMPERATURE*(fire_stacks/FIRE_MAX_FIRESUIT_STACKS)**2), 700)
+
+// Called when struck by lightning.
+/mob/living/proc/lightning_act()
+	// The actual damage/electrocution is handled by the tesla_zap() that accompanies this.
+	Paralyse(5)
+	stuttering += 20
+	make_jittery(150)
+	emp_act(1)
+	to_chat(src, span("critical", "You've been struck by lightning!"))
+
+// Called when touching a lava tile.
+// Does roughly 100 damage to unprotected mobs, and 20 to fully protected mobs.
+/mob/living/lava_act()
+	add_modifier(/datum/modifier/fire/intense, 8 SECONDS) // Around 40 total if left to burn and without fire protection per stack.
+	inflict_heat_damage(40) // Another 40, however this is instantly applied to unprotected mobs.
+	adjustFireLoss(20) // Lava cannot be 100% resisted with fire protection.
 
 /mob/living/proc/reagent_permeability()
 	return 1

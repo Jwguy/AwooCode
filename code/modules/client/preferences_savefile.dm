@@ -81,8 +81,11 @@
 	else
 		player_setup.load_character(S)
 		S.cd = "/character[default_slot]"
+		player_setup.save_character(S)
+		sanitize_preferences()
 
 	player_setup.load_character(S)
+	clear_character_previews() // Recalculate them on next show
 	return 1
 
 /datum/preferences/proc/save_character()
@@ -92,6 +95,24 @@
 	S.cd = "/character[default_slot]"
 
 	player_setup.save_character(S)
+	return 1
+
+/datum/preferences/proc/overwrite_character(slot)
+	if(!path)				return 0
+	if(!fexists(path))		return 0
+	var/savefile/S = new /savefile(path)
+	if(!S)					return 0
+	if(!slot)	slot = default_slot
+	if(slot != SAVE_RESET)
+		slot = sanitize_integer(slot, 1, config.character_slots, initial(default_slot))
+		if(slot != default_slot)
+			default_slot = slot
+			nif_path = nif_durability = nif_savedata = null //VOREStation Add - Don't copy NIF
+			S["default_slot"] << slot
+			
+	else
+		S["default_slot"] << default_slot
+
 	return 1
 
 /datum/preferences/proc/sanitize_preferences()

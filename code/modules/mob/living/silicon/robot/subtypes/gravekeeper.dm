@@ -7,6 +7,7 @@
 	braintype = "Drone"
 	idcard_type = /obj/item/weapon/card/id
 	icon_selected = FALSE
+	can_be_antagged = FALSE
 
 /mob/living/silicon/robot/gravekeeper/init()
 	aiCamera = new/obj/item/device/camera/siliconcam/robot_camera(src)
@@ -23,4 +24,4 @@
 
 	laws = new /datum/ai_laws/gravekeeper()
 
-	playsound(loc, 'sound/mecha/nominalsyndi.ogg', 75, 0)
+	playsound(src, 'sound/mecha/nominalsyndi.ogg', 75, 0)

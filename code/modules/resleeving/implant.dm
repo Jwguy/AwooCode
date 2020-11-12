@@ -7,6 +7,8 @@
 /obj/item/weapon/implant/backup
 	name = "backup implant"
 	desc = "A mindstate backup implant that occasionally stores a copy of one's mind on a central server for backup purposes."
+	catalogue_data = list(/datum/category_item/catalogue/information/organization/khi,
+						/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/vore/custom_items_vr.dmi'
 	icon_state = "backup_implant"
 
@@ -38,6 +40,8 @@
 /obj/item/weapon/backup_implanter
 	name = "backup implanter"
 	desc = "After discovering that Nanotrasen was just re-using the same implanters over and over again on organics, leading to cross-contamination, Kitsuhana Heavy industries designed this self-cleaning model. Holds four backup implants at a time."
+	catalogue_data = list(/datum/category_item/catalogue/information/organization/khi,
+						/datum/category_item/catalogue/technology/resleeving)
 	icon = 'icons/obj/device_alt.dmi'
 	icon_state = "bimplant"
 	item_state = "syringe_0"
@@ -65,14 +69,14 @@
 		return
 
 	if(imps.len)
-		user << "<span class='notice'>You eject a backup implant.</span>"
+		to_chat(user, "<span class='notice'>You eject a backup implant.</span>")
 		var/obj/item/weapon/implant/backup/imp = imps[imps.len]
 		imp.forceMove(get_turf(user))
 		imps -= imp
 		user.put_in_any_hand_if_possible(imp)
 		update()
 	else
-		user << "<span class='warning'>\The [src] is empty.</span>"
+		to_chat(user, "<span class='warning'>\The [src] is empty.</span>")
 
 	return
 
@@ -84,9 +88,9 @@
 			W.germ_level = 0
 			W.forceMove(src)
 			update()
-			user << "<span class='notice'>You load \the [W] into \the [src].</span>"
+			to_chat(user, "<span class='notice'>You load \the [W] into \the [src].</span>")
 		else
-			user << "<span class='warning'>\The [src] is already full!</span>"
+			to_chat(user, "<span class='warning'>\The [src] is already full!</span>")
 
 /obj/item/weapon/backup_implanter/attack(mob/M as mob, mob/user as mob)
 	if (!istype(M, /mob/living/carbon))

@@ -69,7 +69,7 @@
 	var/damage_mod = 1
 	//presumably, if they are wearing a helmet that stops pressure effects, then it probably covers the throat as well
 	var/obj/item/clothing/head/helmet = get_equipped_item(slot_head)
-	if(istype(helmet) && (helmet.body_parts_covered & HEAD) && (helmet.flags & STOPPRESSUREDAMAGE))
+	if(istype(helmet) && (helmet.body_parts_covered & HEAD) && (helmet.min_pressure_protection != null)) // Both min- and max_pressure_protection must be set for it to function at all, so we can just check that one is set.
 		//we don't do an armor_check here because this is not an impact effect like a weapon swung with momentum, that either penetrates or glances off.
 		damage_mod = 1.0 - (helmet.armor["melee"]/100)
 
@@ -92,7 +92,7 @@
 			user.visible_message("<span class='danger'>\The [user] cut [src]'s neck with \the [W]!</span>")
 
 		if(W.hitsound)
-			playsound(loc, W.hitsound, 50, 1, -1)
+			playsound(src, W.hitsound, 50, 1, -1)
 
 	G.last_action = world.time
 	flick(G.hud.icon_state, G.hud)
@@ -112,7 +112,7 @@
 	apply_damage(damage, W.damtype, "torso", 0, sharp=W.sharp, edge=W.edge)
 
 	if(W.hitsound)
-		playsound(loc, W.hitsound, 50, 1, -1)
+		playsound(src, W.hitsound, 50, 1, -1)
 
 	add_attack_logs(user,src,"Knifed (shanked)")
 

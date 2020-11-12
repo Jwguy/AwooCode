@@ -60,6 +60,7 @@
 /area/surface/outside
 	ambience = AMBIENCE_SIF
 	always_unpowered = TRUE
+	flags = AREA_FLAG_IS_NOT_PERSISTENT
 
 // The area near the outpost, so POIs don't show up right next to the outpost.
 /area/surface/outside/plains/outpost
@@ -108,13 +109,13 @@
 	icon_state = "bluenew"
 
 /area/surface/outside/river/faxalven
-	name = "Faxälven River"
+	name = "Fax�lven River"
 
 /area/surface/outside/river/indalsalven
-	name = "Indalsälven River"
+	name = "Indals�lven River"
 
 /area/surface/outside/river/svartan
-	name = "Svartån River"
+	name = "Svart�n River"
 
 /area/surface/outside/lake/romsele
 	name = "Romsele Lake"
@@ -123,7 +124,7 @@
 
 
 /area/surface/cave
-	flags = RAD_SHIELDED
+	flags = RAD_SHIELDED | AREA_FLAG_IS_NOT_PERSISTENT
 	always_unpowered = TRUE
 
 /area/surface/cave
@@ -153,6 +154,11 @@
 /area/surface/outpost
 	ambience = AMBIENCE_GENERIC
 
+//Wilderness Shuttle Shelter
+
+/area/surface/outpost/shelter
+	name = "Wilderness Shelter"
+
 // Main mining outpost
 /area/surface/outpost/mining_main
 	name = "North Mining Outpost"
@@ -177,6 +183,7 @@
 /area/surface/outpost/mining_main/gen_room
 	name = "North Mining Generator Room"
 	icon_state = "substation"
+	ambience = AMBIENCE_SUBSTATION
 
 /area/surface/outpost/mining_main/emergencystorage
 	name = "\improper North Mining Emergency Storage"
@@ -206,6 +213,7 @@
 	name = "\improper Xenoresearch SMES Maintenance"
 	icon_state = "substation"
 	sound_env = SMALL_ENCLOSED
+	ambience = AMBIENCE_SUBSTATION
 
 /area/surface/outpost/research/xenoresearch/emergencystorage
 	name = "\improper Xenoresearch Emergency Storage"
@@ -242,6 +250,7 @@
 	name = "\improper Xenoarcheology SMES Maintenance"
 	icon_state = "substation"
 	sound_env = SMALL_ENCLOSED
+	ambience = AMBIENCE_SUBSTATION
 
 /area/surface/outpost/research/xenoarcheology/emergencystorage
 	name = "\improper Xenoarcheology Emergency Storage"
@@ -286,7 +295,7 @@
 /area/surface/outpost/main/gen_room
 	name = "\improper Main Outpost SMES"
 	icon_state = "substation"
-	ambience = AMBIENCE_ENGINEERING
+	ambience = AMBIENCE_SUBSTATION
 
 /area/surface/outpost/main/gen_room/smes
 	name = "\improper Main Outpost Dorm SMES"
@@ -313,11 +322,11 @@
 	sound_env = MEDIUM_SOFTFLOOR
 
 /area/surface/outpost/main/telecomms
-	name = "Main Outpost Telecommunications"
+	name = "\improper Main Outpost Telecommunications"
 	music = "signal"
 
 /area/surface/outpost/main/teleporter
-	name = "Main Outpost Teleporter"
+	name = "\improper Main Outpost Teleporter"
 	icon_state = "teleporter"
 
 /area/surface/outpost/main/first_aid
@@ -372,6 +381,7 @@
 /area/outpost/mining_station/gen_station
 	name = "Mining Station Generator Room"
 	icon_state = "substation"
+	ambience = AMBIENCE_SUBSTATION
 
 /area/outpost/mining_station/crew_area
 	name = "Mining Station Crew Area"
@@ -393,7 +403,7 @@
 	icon_state = "shuttle"
 	requires_power = 0
 	dynamic_lighting = 1
-	flags = RAD_SHIELDED
+	flags = RAD_SHIELDED | AREA_FLAG_IS_NOT_PERSISTENT
 
 /area/turbolift/start
 	name = "\improper Turbolift Start"
@@ -603,6 +613,7 @@
 	name = "\improper First Deck Hangar"
 	icon_state = "hangar"
 	sound_env = LARGE_ENCLOSED
+	ambience = AMBIENCE_HANGAR
 
 /area/hangar/one
 	name = "\improper Hangar One"
@@ -722,6 +733,9 @@
 /area/construction/seconddeck/construction1
 	name = "\improper Second Deck Engineering Construction Area 1"
 
+/area/construction/seconddeck/construction2
+	name = "\improper Abandoned Locker Room"
+
 /area/crew_quarters/seconddeck/locker
 	name = "\improper Locker Room"
 	icon_state = "locker"
@@ -745,11 +759,13 @@
 	name = "\improper Command - HoP's Office"
 	icon_state = "head_quarters"
 	holomap_color = HOLOMAP_AREACOLOR_COMMAND
+	flags = AREA_FLAG_IS_NOT_PERSISTENT
 
 /area/crew_quarters/heads/sc/hor
 	name = "\improper Research - RD's Office"
 	icon_state = "head_quarters"
 	holomap_color = HOLOMAP_AREACOLOR_SCIENCE
+	flags = AREA_FLAG_IS_NOT_PERSISTENT
 
 /area/crew_quarters/heads/sc/chief
 	name = "\improper Engineering - CE's Office"
@@ -765,6 +781,7 @@
 	name = "\improper Medbay - CMO's Office"
 	icon_state = "head_quarters"
 	holomap_color = HOLOMAP_AREACOLOR_MEDICAL
+	flags = AREA_FLAG_IS_NOT_PERSISTENT
 
 /area/engineering/engineer_eva
 	name = "\improper Engineering EVA"
@@ -1044,6 +1061,7 @@ area/crew_quarters/heads/sc/hop/quarters
 	name = "\improper Third Deck Plating"
 	dynamic_lighting = 0
 	ambience = AMBIENCE_SPACE
+	flags = AREA_FLAG_IS_NOT_PERSISTENT
 
 // Shuttles
 
@@ -1117,9 +1135,8 @@ area/crew_quarters/heads/sc/hop/quarters
 	flags = RAD_SHIELDED
 
 /area/shuttle/shuttle1/start
-	name = "\improper Hangar One"
+	name = "Shuttle One"
 	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/reinforced
 
 /area/shuttle/shuttle1/arrivals_dock
 	name = "\improper docked with Southern Cross"
@@ -1168,9 +1185,8 @@ area/crew_quarters/heads/sc/hop/quarters
 	flags = RAD_SHIELDED
 
 /area/shuttle/shuttle2/start
-	name = "\improper Hangar Two"
+	name = "Shuttle Two"
 	icon_state = "shuttlered"
-	base_turf = /turf/simulated/floor/reinforced
 
 /area/shuttle/shuttle2/arrivals_dock
 	name = "\improper docked with Southern Cross"
@@ -1212,20 +1228,20 @@ area/crew_quarters/heads/sc/hop/quarters
 // Centcom Transport Shuttle
 /area/shuttle/transport1/centcom
 	icon_state = "shuttle"
-	name = "\improper Transport Shuttle Centcom"
+	name = "\improper Transport Shuttle"
 
 /area/shuttle/transport1/station
 	icon_state = "shuttle"
-	name = "\improper Transport Shuttle"
+	name = "\improper Transport Shuttle Station"
 
 // Centcom Admin Shuttle
 
 /area/shuttle/administration/centcom
-	name = "\improper Administration Shuttle CentCom"
+	name = "\improper Administration Shuttle"
 	icon_state = "shuttlered"
 
 /area/shuttle/administration/station
-	name = "\improper Administration Shuttle"
+	name = "\improper Administration Shuttle Station"
 	icon_state = "shuttlered2"
 
 //Merc
@@ -1426,6 +1442,15 @@ area/crew_quarters/heads/sc/hop/quarters
 
 /area/shuttle/merchant/away
 	name = "\improper Merchant Vessel - Away"
+
+
+// Main escape shuttle
+
+// Note: Keeping this "legacy" area path becuase of its use in lots of legacy code.
+/area/shuttle/escape/centcom
+	name = "\improper Emergency Shuttle"
+	icon_state = "shuttle"
+	dynamic_lighting = 0
 
 //Small Escape Pods
 

@@ -240,9 +240,9 @@ SUBSYSTEM_DEF(garbage)
 		time = TICK_DELTA_TO_MS(tick)/100
 	if (time > highest_del_time)
 		highest_del_time = time
-	if (time > 10)
-		log_game("Error: [type]([refID]) took longer than 1 second to delete (took [time/10] seconds to delete)")
-		message_admins("Error: [type]([refID]) took longer than 1 second to delete (took [time/10] seconds to delete).")
+	if (time > 20) //VOREStation Edit
+		log_game("Error: [type]([refID]) took longer than 2 seconds to delete (took [time/10] seconds to delete)") //VOREStation Edit
+		message_admins("Error: [type]([refID]) took longer than 2 seconds to delete (took [time/10] seconds to delete).") //VOREStation Edit
 		postpone(time)
 
 /datum/controller/subsystem/garbage/proc/HardQueue(datum/D)
@@ -284,9 +284,12 @@ SUBSYSTEM_DEF(garbage)
 
 
 	if(isnull(D.gc_destroyed))
+		if(SEND_SIGNAL(D, COMSIG_PARENT_PREQDELETED, force)) // Give the components a chance to prevent their parent from being deleted
+			return
 		D.gc_destroyed = GC_CURRENTLY_BEING_QDELETED
 		var/start_time = world.time
 		var/start_tick = world.tick_usage
+		SEND_SIGNAL(D, COMSIG_PARENT_QDELETING, force) // Let the (remaining) components know about the result of Destroy
 		var/hint = D.Destroy(force) // Let our friend know they're about to get fucked up.
 		if(world.time != start_time)
 			I.slept_destroy++

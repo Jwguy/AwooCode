@@ -98,14 +98,14 @@ steam.start() -- spawns the effect
 
 /obj/effect/effect/sparks/New()
 	..()
-	playsound(src.loc, "sparks", 100, 1)
+	playsound(src, "sparks", 100, 1)
 	var/turf/T = src.loc
 	if (istype(T, /turf))
 		T.hotspot_expose(1000,100)
 
-/obj/effect/effect/sparks/initialize()
+/obj/effect/effect/sparks/Initialize()
 	. = ..()
-	schedule_task_in(5 SECONDS, /proc/qdel, list(src))
+	QDEL_IN(src, 5 SECONDS)
 
 /obj/effect/effect/sparks/Destroy()
 	var/turf/T = src.loc
@@ -113,12 +113,11 @@ steam.start() -- spawns the effect
 		T.hotspot_expose(1000,100)
 	return ..()
 
-/obj/effect/effect/sparks/Move()
-	..()
-	var/turf/T = src.loc
-	if (istype(T, /turf))
+/obj/effect/effect/sparks/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	if(isturf(loc))
+		var/turf/T = loc
 		T.hotspot_expose(1000,100)
-	return
 
 /datum/effect/effect/system/spark_spread
 	var/total_sparks = 0 // To stop it being spammed and lagging!
@@ -185,6 +184,8 @@ steam.start() -- spawns the effect
 				qdel(src)
 
 /obj/effect/effect/smoke/Crossed(mob/living/carbon/M as mob )
+	if(M.is_incorporeal())
+		return
 	..()
 	if(istype(M))
 		affect(M)
@@ -223,17 +224,27 @@ steam.start() -- spawns the effect
 	time_to_live = 600
 	//var/list/projectiles
 
-/obj/effect/effect/smoke/bad/Move()
-	..()
-	for(var/mob/living/carbon/M in get_turf(src))
-		affect(M)
+/obj/effect/effect/smoke/bad/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	for(var/mob/living/L in get_turf(src))
+		affect(L)
 
-/obj/effect/effect/smoke/bad/affect(var/mob/living/carbon/M)
+/obj/effect/effect/smoke/bad/affect(var/mob/living/L)
 	if (!..())
 		return 0
-	M.adjustOxyLoss(1)
-	if(prob(25))
-		M.emote("cough")
+	if(L.needs_to_breathe())
+		L.adjustOxyLoss(1)
+		if(prob(25))
+			L.emote("cough")
+
+/obj/effect/effect/smoke/bad/noxious
+	opacity = 0
+
+/obj/effect/effect/smoke/bad/noxious/affect(var/mob/living/L)
+	if (!..())
+		return 0
+	if(L.needs_to_breathe())
+		L.adjustToxLoss(1)
 
 /* Not feasile until a later date
 /obj/effect/effect/smoke/bad/Crossed(atom/movable/M as mob|obj)
@@ -244,12 +255,93 @@ steam.start() -- spawns the effect
 			B.damage = (B.damage/2)
 			projectiles += B
 			destroyed_event.register(B, src, /obj/effect/effect/smoke/bad/proc/on_projectile_delete)
-		world << "Damage is: [B.damage]"
+		to_world("Damage is: [B.damage]")
 	return 1
 
 /obj/effect/effect/smoke/bad/proc/on_projectile_delete(obj/item/projectile/beam/proj)
 	projectiles -= proj
 */
+
+// Burnt Food Smoke (Specialty for Cooking Failures)
+/obj/effect/effect/smoke/bad/burntfood
+	color = "#000000"
+	time_to_live = 600
+	
+/obj/effect/effect/smoke/bad/burntfood/process()
+	for(var/mob/living/L in get_turf(src))
+		affect(L)
+	
+/obj/effect/effect/smoke/bad/burntfood/affect(var/mob/living/L) // This stuff is extra-vile.
+	if (!..())
+		return 0
+	if(L.needs_to_breathe())
+		L.emote("cough")
+
+/////////////////////////////////////////////
+// 'Elemental' smoke
+/////////////////////////////////////////////
+
+/obj/effect/effect/smoke/elemental
+	name = "cloud"
+	desc = "A cloud of some kind that seems really generic and boring."
+	opacity = FALSE
+	var/strength = 5 // How much damage to do inside each affect()
+
+/obj/effect/effect/smoke/elemental/Initialize()
+	START_PROCESSING(SSobj, src)
+	return ..()
+
+/obj/effect/effect/smoke/elemental/Destroy()
+	STOP_PROCESSING(SSobj, src)
+	return ..()
+
+/obj/effect/effect/smoke/elemental/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	for(var/mob/living/L in range(1, src))
+		affect(L)
+
+/obj/effect/effect/smoke/elemental/process()
+	for(var/mob/living/L in range(1, src))
+		affect(L)
+
+
+/obj/effect/effect/smoke/elemental/fire
+	name = "burning cloud"
+	desc = "A cloud of something that is on fire."
+	color = "#FF9933"
+	light_color = "#FF0000"
+	light_range = 2
+	light_power = 5
+
+/obj/effect/effect/smoke/elemental/fire/affect(mob/living/L)
+	L.inflict_heat_damage(strength)
+	L.add_modifier(/datum/modifier/fire, 6 SECONDS) // Around 15 damage per stack.
+
+/obj/effect/effect/smoke/elemental/frost
+	name = "freezing cloud"
+	desc = "A cloud filled with brutally cold mist."
+	color = "#00CCFF"
+
+/obj/effect/effect/smoke/elemental/frost/affect(mob/living/L)
+	L.inflict_cold_damage(strength)
+
+/obj/effect/effect/smoke/elemental/shock
+	name = "charged cloud"
+	desc = "A cloud charged with electricity."
+	color = "#4D4D4D"
+
+/obj/effect/effect/smoke/elemental/shock/affect(mob/living/L)
+	L.inflict_shock_damage(strength)
+
+/obj/effect/effect/smoke/elemental/mist
+	name = "misty cloud"
+	desc = "A cloud filled with water vapor."
+	color = "#CCFFFF"
+	alpha = 128
+	strength = 1
+
+/obj/effect/effect/smoke/elemental/mist/affect(mob/living/L)
+	L.water_act(strength)
 
 /////////////////////////////////////////////
 // Smoke spread
@@ -282,7 +374,8 @@ steam.start() -- spawns the effect
 				src.location = get_turf(holder)
 			var/obj/effect/effect/smoke/smoke = new smoke_type(src.location)
 			src.total_smoke++
-			smoke.color = I
+			if(I)
+				smoke.color = I
 			var/direction = src.direction
 			if(!direction)
 				if(src.cardinals)
@@ -296,9 +389,26 @@ steam.start() -- spawns the effect
 				if (smoke) qdel(smoke)
 				src.total_smoke--
 
-
 /datum/effect/effect/system/smoke_spread/bad
 	smoke_type = /obj/effect/effect/smoke/bad
+	
+/datum/effect/effect/system/smoke_spread/bad/burntfood
+	smoke_type = /obj/effect/effect/smoke/bad/burntfood
+
+/datum/effect/effect/system/smoke_spread/noxious
+	smoke_type = /obj/effect/effect/smoke/bad/noxious
+
+/datum/effect/effect/system/smoke_spread/fire
+	smoke_type = /obj/effect/effect/smoke/elemental/fire
+
+/datum/effect/effect/system/smoke_spread/frost
+	smoke_type = /obj/effect/effect/smoke/elemental/frost
+
+/datum/effect/effect/system/smoke_spread/shock
+	smoke_type = /obj/effect/effect/smoke/elemental/shock
+
+/datum/effect/effect/system/smoke_spread/mist
+	smoke_type = /obj/effect/effect/smoke/elemental/mist
 
 /////////////////////////////////////////////
 //////// Attach an Ion trail to any object, that spawns when it moves (like for the jetpack)
@@ -328,7 +438,15 @@ steam.start() -- spawns the effect
 		if(src.processing)
 			src.processing = 0
 			spawn(0)
-				var/turf/T = get_turf(src.holder)
+				var/turf/T
+				if(istype(holder, /atom/movable))
+					var/atom/movable/AM = holder
+					if(AM.locs && AM.locs.len)
+						T = get_turf(pick(AM.locs))
+					else
+						T = get_turf(AM)
+				else //when would this ever be attached a non-atom/movable?
+					T = get_turf(src.holder)
 				if(T != src.oldposition)
 					if(isturf(T))
 						var/obj/effect/effect/ion_trails/I = new /obj/effect/effect/ion_trails(src.oldposition)
@@ -422,10 +540,10 @@ steam.start() -- spawns the effect
 			s.start()
 
 			for(var/mob/M in viewers(5, location))
-				M << "<span class='warning'>The solution violently explodes.</span>"
+				to_chat(M, "<span class='warning'>The solution violently explodes.</span>")
 			for(var/mob/M in viewers(1, location))
 				if (prob (50 * amount))
-					M << "<span class='warning'>The explosion knocks you down.</span>"
+					to_chat(M, "<span class='warning'>The explosion knocks you down.</span>")
 					M.Weaken(rand(1,5))
 			return
 		else
@@ -448,7 +566,7 @@ steam.start() -- spawns the effect
 				flash = (amount/4) * flashing_factor
 
 			for(var/mob/M in viewers(8, location))
-				M << "<span class='warning'>The solution violently explodes.</span>"
+				to_chat(M, "<span class='warning'>The solution violently explodes.</span>")
 
 			explosion(
 				location,

@@ -40,31 +40,49 @@
 	containertype = /obj/structure/closet/crate
 	containername = "wolfgirl cosplay crate"
 
-/datum/supply_pack/randomised/recreation/figures_vr
+/datum/supply_pack/randomised/recreation/figures
 	name = "Action figures crate"
 	num_contained = 5
 	contains = list(
-			/obj/random/action_figure
+			/obj/random/action_figure/supplypack
 			)
 	cost = 200
 	containertype = /obj/structure/closet/crate
 	containername = "Action figures crate"
 
-/datum/supply_pack/recreation/characters_vr
-	name = "Tabletop miniatures"
+/datum/supply_pack/recreation/collars
+	name = "Collar bundle"
 	contains = list(
-			/obj/item/weapon/storage/box/characters
+			/obj/item/clothing/accessory/collar/shock = 1,
+			/obj/item/clothing/accessory/collar/spike = 1,
+			/obj/item/clothing/accessory/collar/silver = 1,
+			/obj/item/clothing/accessory/collar/gold = 1,
+			/obj/item/clothing/accessory/collar/bell = 1,
+			/obj/item/clothing/accessory/collar/pink = 1,
+			/obj/item/clothing/accessory/collar/holo = 1
 			)
+	cost = 25
 	containertype = /obj/structure/closet/crate
-	containername = "Tabletop miniatures crate"
-	cost = 50
+	containername = "collar crate"
 
-/datum/supply_pack/randomised/recreation/plushies_vr
-	name = "Plushies crate"
-	num_contained = 3
+/datum/supply_pack/recreation/shiny
+	name = "Shiny Clothing"
 	contains = list(
-			/obj/random/plushie
+			/obj/item/clothing/mask/muzzle/ballgag = 1,
+			/obj/item/clothing/mask/muzzle/ballgag/ringgag = 1,
+			/obj/item/clothing/head/shiny_hood = 1,
+			/obj/item/clothing/head/shiny_hood/poly = 1,
+			/obj/item/clothing/head/shiny_hood/closed = 1,
+			/obj/item/clothing/head/shiny_hood/closed/poly = 1,
+			/obj/item/clothing/under/shiny/catsuit = 1,
+			/obj/item/clothing/under/shiny/catsuit/poly = 1,
+			/obj/item/clothing/under/shiny/leotard = 1,
+			/obj/item/clothing/under/shiny/leotard/poly = 1,
+			/obj/item/clothing/accessory/shiny/gloves = 1,
+			/obj/item/clothing/accessory/shiny/gloves/poly = 1,
+			/obj/item/clothing/accessory/shiny/socks = 1,
+			/obj/item/clothing/accessory/shiny/socks/poly = 1
 			)
-	cost = 60
 	containertype = /obj/structure/closet/crate
-	containername = "Plushies crate"
+	containername = "Shiny clothes crate"
+	cost = 30

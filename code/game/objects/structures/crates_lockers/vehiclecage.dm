@@ -9,11 +9,11 @@
 	var/paint_color = "#666666"
 
 /obj/structure/vehiclecage/examine(mob/user)
-	..()
+	. = ..()
 	if(my_vehicle)
-		to_chat(user, "<span class='notice'>It seems to contain \the [my_vehicle].</span>")
+		. += "<span class='notice'>It seems to contain \the [my_vehicle].</span>"
 
-/obj/structure/vehiclecage/initialize()
+/obj/structure/vehiclecage/Initialize()
 	. = ..()
 	if(my_vehicle_type)
 		my_vehicle = new my_vehicle_type(src)
@@ -32,11 +32,11 @@
 	if(!T)
 		to_chat(user, "<span class='notice'>You can't open this here!</span>")
 	if(W.is_wrench() && do_after(user, 60 * W.toolspeed, src))
-		playsound(loc, W.usesound, 50, 1)
+		playsound(src, W.usesound, 50, 1)
 		disassemble(W, user)
 		user.visible_message("<span class='notice'>[user] begins loosening \the [src]'s bolts.</span>")
 	if(W.is_wirecutter() && do_after(user, 70 * W.toolspeed, src))
-		playsound(loc, W.usesound, 50, 1)
+		playsound(src, W.usesound, 50, 1)
 		disassemble(W, user)
 		user.visible_message("<span class='notice'>[user] begins cutting \the [src]'s bolts.</span>")
 	else

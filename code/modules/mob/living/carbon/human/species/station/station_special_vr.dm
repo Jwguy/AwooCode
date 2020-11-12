@@ -29,6 +29,7 @@
 		/mob/living/carbon/human/proc/succubus_drain_finalize,
 		/mob/living/carbon/human/proc/succubus_drain_lethal,
 		/mob/living/carbon/human/proc/bloodsuck,
+		/mob/living/carbon/human/proc/tie_hair,
 		/mob/living/proc/shred_limb,
 		/mob/living/proc/flying_toggle,
 		/mob/living/proc/start_wings_hovering) //Xenochimera get all the special verbs since they can't select traits.
@@ -41,6 +42,10 @@
 	Widely known for their voracious nature and violent tendencies when stressed or left unfed for long periods of time. \
 	Most, if not all chimeras possess the ability to undergo some type of regeneration process, at the cost of energy."
 
+	wikilink = "https://wiki.vore-station.net/Xenochimera"
+
+	catalogue_data = list(/datum/category_item/catalogue/fauna/xenochimera)
+
 	hazard_low_pressure = -1 //Prevents them from dying normally in space. Special code handled below.
 	cold_level_1 = -1     // All cold debuffs are handled below in handle_environment_special
 	cold_level_2 = -1
@@ -48,7 +53,7 @@
 
 	//primitive_form = "Farwa"
 
-	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED //Whitelisted as restricted is broken.
+	spawn_flags = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE//Whitelisted as restricted is broken.
 	flags = NO_SCAN | NO_INFECT //Dying as a chimera is, quite literally, a death sentence. Well, if it wasn't for their revive, that is.
 	appearance_flags = HAS_HAIR_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_SKIN_COLOR | HAS_EYE_COLOR
 
@@ -59,13 +64,16 @@
 		O_LIVER =    /obj/item/organ/internal/liver,
 		O_KIDNEYS =  /obj/item/organ/internal/kidneys,
 		O_BRAIN =    /obj/item/organ/internal/brain,
-		O_EYES =     /obj/item/organ/internal/eyes
+		O_EYES =     /obj/item/organ/internal/eyes,
+		O_STOMACH =		/obj/item/organ/internal/stomach,
+		O_INTESTINE =	/obj/item/organ/internal/intestine
 		)
 
 	flesh_color = "#AFA59E"
 	base_color 	= "#333333"
 	blood_color = "#14AD8B"
 
+	reagent_tag = IS_CHIMERA
 
 /datum/species/xenochimera/handle_environment_special(var/mob/living/carbon/human/H)
 	//If they're KO'd/dead, they're probably not thinking a lot about much of anything.
@@ -73,7 +81,7 @@
 		handle_feralness(H)
 
 	//While regenerating
-	if(H.reviving && H.reviving != REVIVING_COOLDOWN)
+	if(H.revive_ready == REVIVING_NOW || H.revive_ready == REVIVING_DONE)
 		H.weakened = 5
 		H.canmove = 0
 		H.does_not_breathe = TRUE
@@ -110,7 +118,11 @@
 	//To reduce distant object references
 	var/feral = H.feral
 
-//Handle feral triggers and pre-feral messages
+	//Are we in danger of ferality?
+	var/danger = FALSE
+	var/feral_state = FALSE
+
+	//Handle feral triggers and pre-feral messages
 	if(!feral && (hungry || shock || jittery))
 
 		// If they're hungry, give nag messages (when not bellied)
@@ -120,12 +132,15 @@
 					to_chat(H,"<span class='info'>You feel rather hungry. It might be a good idea to find some some food...</span>")
 				if(100 to 150)
 					to_chat(H,"<span class='warning'>You feel like you're going to snap and give in to your hunger soon... It would be for the best to find some [pick("food","prey")] to eat...</span>")
+					danger = TRUE
 
 		// Going feral due to hunger
 		else if(H.nutrition < 100 && !isbelly(H.loc))
 			to_chat(H,"<span class='danger'><big>Something in your mind flips, your instincts taking over, no longer able to fully comprehend your surroundings as survival becomes your primary concern - you must feed, survive, there is nothing else. Hunt. Eat. Hide. Repeat.</big></span>")
 			log_and_message_admins("has gone feral due to hunger.", H)
 			feral = 5
+			danger = TRUE
+			feral_state = TRUE
 			if(!H.stat)
 				H.emote("twitch")
 
@@ -138,6 +153,8 @@
 					to_chat(H,"<span class='danger'><big>The pain! It stings! Got to get away! Your instincts take over, urging you to flee, to hide, to go to ground, get away from here...</big></span>")
 					log_and_message_admins("has gone feral due to halloss.", H)
 					feral = 5
+					danger = TRUE
+					feral_state = TRUE
 					if(!H.stat)
 						H.emote("twitch")
 
@@ -145,6 +162,8 @@
 			else if(prob(min(10,(0.1 * H.traumatic_shock))))
 				to_chat(H,"<span class='danger'><big>Your fight-or-flight response kicks in, your injuries too much to simply ignore - you need to flee, to hide, survive at all costs - or destroy whatever is threatening you.</big></span>")
 				feral = 5
+				danger = TRUE
+				feral_state = TRUE
 				log_and_message_admins("has gone feral due to injury.", H)
 				if(!H.stat)
 					H.emote("twitch")
@@ -153,27 +172,35 @@
 		else if(jittery)
 			to_chat(H,"<span class='warning'><big>Suddenly, something flips - everything that moves is... potential prey. A plaything. This is great! Time to hunt!</big></span>")
 			feral = 5
+			danger = TRUE
+			feral_state = TRUE
 			log_and_message_admins("has gone feral due to jitteriness.", H)
 			if(!H.stat)
 				H.emote("twitch")
 
-// Handle being feral
+	// Handle being feral
 	if(feral)
+		//We're feral
+		feral_state = TRUE
 
 		//Shock due to mostly halloss. More feral.
 		if(shock && 2.5*H.halloss >= H.traumatic_shock)
+			danger = TRUE
 			feral = max(feral, H.halloss)
 
 		//Shock due to mostly injury. More feral.
 		else if(shock)
+			danger = TRUE
 			feral = max(feral, H.traumatic_shock * 2)
 
 		//Still jittery? More feral.
 		if(jittery)
+			danger = TRUE
 			feral = max(feral, H.jitteriness-100)
 
 		//Still hungry? More feral.
 		if(H.feral + H.nutrition < 150)
+			danger = TRUE
 			feral++
 		else
 			feral = max(0,--feral)
@@ -183,8 +210,10 @@
 
 		//Did we just finish being feral?
 		if(!feral)
+			feral_state = FALSE
 			to_chat(H,"<span class='info'>Your thoughts start clearing, your feral urges having passed - for the time being, at least.</span>")
 			log_and_message_admins("is no longer feral.", H)
+			update_xenochimera_hud(H, danger, feral_state)
 			return
 
 		//If they lose enough health to hit softcrit, handle_shock() will keep resetting this. Otherwise, pissed off critters will lose shock faster than they gain it.
@@ -193,6 +222,7 @@
 		//Handle light/dark areas
 		var/turf/T = get_turf(H)
 		if(!T)
+			update_xenochimera_hud(H, danger, feral_state)
 			return //Nullspace
 		var/darkish = T.get_lumcount() <= 0.1
 
@@ -214,6 +244,7 @@
 					H.handle_feral()
 
 			//And bail
+			update_xenochimera_hud(H, danger, feral_state)
 			return
 
 		// In the darkness or "hidden". No need for custom scene-protection checks as it's just an occational infomessage.
@@ -260,6 +291,9 @@
 				else
 					to_chat(H,"<span class='danger'>Confusing sights and sounds and smells surround you, this place is wrong, confusing, frightening. You need to hide, go to ground...</span>")
 
+	// HUD update time
+	update_xenochimera_hud(H, danger, feral_state)
+
 
 /datum/species/xenochimera/proc/produceCopy(var/datum/species/to_copy,var/list/traits,var/mob/living/carbon/human/H)
 	ASSERT(to_copy)
@@ -268,7 +302,7 @@
 	if(ispath(to_copy))
 		to_copy = "[initial(to_copy.name)]"
 	if(istext(to_copy))
-		to_copy = all_species[to_copy]
+		to_copy = GLOB.all_species[to_copy]
 
 	var/datum/species/xenochimera/new_copy = new()
 
@@ -304,9 +338,22 @@
 	return base_species
 
 /datum/species/xenochimera/get_race_key()
-	var/datum/species/real = all_species[base_species]
+	var/datum/species/real = GLOB.all_species[base_species]
 	return real.race_key
 
+/datum/species/xenochimera/proc/update_xenochimera_hud(var/mob/living/carbon/human/H, var/danger, var/feral)
+	if(H.xenochimera_danger_display)
+		H.xenochimera_danger_display.invisibility = 0
+		if(danger && feral)
+			H.xenochimera_danger_display.icon_state = "danger11"
+		else if(danger && !feral)
+			H.xenochimera_danger_display.icon_state = "danger10"
+		else if(!danger && feral)
+			H.xenochimera_danger_display.icon_state = "danger01"
+		else
+			H.xenochimera_danger_display.icon_state = "danger00"
+
+	return
 
 /////////////////////
 /////SPIDER RACE/////
@@ -329,7 +376,7 @@
 	icobase_tail = 1
 
 	inherent_verbs = list(
-		/mob/proc/weaveWebBindings)
+		/mob/living/proc/weaveWebBindings)
 
 	min_age = 18
 	max_age = 80
@@ -339,6 +386,10 @@
 	from their mandible lined mouths.  They are a recent discovery by Nanotrasen, only being discovered roughly seven years ago.  \
 	Before they were found they built great cities out of their silk, being united and subjugated in warring factions under great Star Queens  \
 	Who forced the working class to build huge, towering cities to attempt to reach the stars, which they worship as gems of great spiritual and magical significance."
+
+	wikilink = "https://wiki.vore-station.net/Vasilissans"
+
+	catalogue_data = list(/datum/category_item/catalogue/fauna/vasilissan)
 
 	hazard_low_pressure = 20 //Prevents them from dying normally in space. Special code handled below.
 	cold_level_1 = -1    // All cold debuffs are handled below in handle_environment_special
@@ -372,3 +423,65 @@
 			H.eye_blurry = 5
 		H.shock_stage = min(H.shock_stage + coldshock, 160) //cold hurts and gives them pain messages, eventually weakening and paralysing, but doesn't damage.
 		return
+
+/datum/species/werebeast
+	name = SPECIES_WEREBEAST
+	name_plural = "Werebeasts"
+	icobase = 'icons/mob/human_races/r_werebeast.dmi'
+	deform = 'icons/mob/human_races/r_def_werebeast.dmi'
+	icon_template = 'icons/mob/human_races/r_werebeast.dmi'
+	tail = "tail"
+	unarmed_types = list(/datum/unarmed_attack/stomp, /datum/unarmed_attack/kick, /datum/unarmed_attack/claws, /datum/unarmed_attack/bite/sharp)
+	total_health = 200
+	brute_mod = 0.85
+	burn_mod = 0.85
+	metabolic_rate = 2
+	item_slowdown_mod = 0.25
+	hunger_factor = 0.4
+	darksight = 8
+	mob_size = MOB_LARGE
+	num_alternate_languages = 3
+	secondary_langs = list(LANGUAGE_CANILUNZT)
+	name_language = LANGUAGE_CANILUNZT
+	primitive_form = "Wolpin"
+	color_mult = 1
+	icon_height = 64
+
+	min_age = 18
+	max_age = 200
+
+	blurb = "Big buff werewolves. These are a limited functionality event species that are not balanced for regular gameplay. Adminspawn only."
+
+	wikilink="N/A"
+
+	catalogue_data = list(/datum/category_item/catalogue/fauna/vulpkanin)
+
+	spawn_flags		 = SPECIES_CAN_JOIN | SPECIES_IS_WHITELISTED | SPECIES_WHITELIST_SELECTABLE
+	appearance_flags = HAS_HAIR_COLOR | HAS_SKIN_COLOR | HAS_EYE_COLOR
+	inherent_verbs = list(
+		/mob/living/proc/shred_limb,
+		/mob/living/proc/eat_trash)
+
+	flesh_color = "#AFA59E"
+	base_color = "#777777"
+
+	heat_discomfort_strings = list(
+		"Your fur prickles in the heat.",
+		"You feel uncomfortably warm.",
+		"Your overheated skin itches."
+		)
+
+	has_limbs = list(
+		BP_TORSO =  list("path" = /obj/item/organ/external/chest),
+		BP_GROIN =  list("path" = /obj/item/organ/external/groin),
+		BP_HEAD =   list("path" = /obj/item/organ/external/head/vr/werebeast),
+		BP_L_ARM =  list("path" = /obj/item/organ/external/arm),
+		BP_R_ARM =  list("path" = /obj/item/organ/external/arm/right),
+		BP_L_LEG =  list("path" = /obj/item/organ/external/leg),
+		BP_R_LEG =  list("path" = /obj/item/organ/external/leg/right),
+		BP_L_HAND = list("path" = /obj/item/organ/external/hand),
+		BP_R_HAND = list("path" = /obj/item/organ/external/hand/right),
+		BP_L_FOOT = list("path" = /obj/item/organ/external/foot),
+		BP_R_FOOT = list("path" = /obj/item/organ/external/foot/right)
+		)
+

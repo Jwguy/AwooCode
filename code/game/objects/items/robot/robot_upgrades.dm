@@ -6,6 +6,8 @@
 	desc = "Protected by FRM."
 	icon = 'icons/obj/module.dmi'
 	icon_state = "cyborg_upgrade"
+	///	Bitflags listing module compatibility. Used in the exosuit fabricator for creating sub-categories.
+	var/list/module_flags = NONE
 	var/locked = 0
 	var/require_module = 0
 	var/installed = 0
@@ -25,18 +27,9 @@
 	require_module = 1
 
 /obj/item/borg/upgrade/reset/action(var/mob/living/silicon/robot/R)
-	if(..()) return 0
-	R.transform_with_anim() //VOREStation edit: sprite animation
-	R.uneq_all()
-	R.modtype = initial(R.modtype)
-	R.hands.icon_state = initial(R.hands.icon_state)
-
-	R.notify_ai(ROBOT_NOTIFICATION_MODULE_RESET, R.module.name)
-	R.module.Reset(R)
-	qdel(R.module)
-	R.module = null
-	R.updatename("Default")
-
+	if(..())
+		return 0
+	R.module_reset()
 	return 1
 
 /obj/item/borg/upgrade/rename
@@ -75,7 +68,7 @@
 			if(ghost.mind && ghost.mind.current == R)
 				R.key = ghost.key
 
-	R.stat = CONSCIOUS
+	R.set_stat(CONSCIOUS)
 	dead_mob_list -= R
 	living_mob_list |= R
 	R.notify_ai(ROBOT_NOTIFICATION_NEW_UNIT)
@@ -104,6 +97,7 @@
 	desc = "Used to cool a mounted taser, increasing the potential current in it and thus its recharge rate."
 	icon_state = "cyborg_upgrade3"
 	item_state = "cyborg_upgrade"
+	module_flags = BORG_MODULE_SECURITY
 	require_module = 1
 
 
@@ -218,5 +212,6 @@
 	R.add_language(LANGUAGE_SCHECHI, 1)
 	R.add_language(LANGUAGE_ROOTLOCAL, 1)
 	R.add_language(LANGUAGE_TERMINUS, 1)
+	R.add_language(LANGUAGE_ZADDAT, 1)
 
 	return 1

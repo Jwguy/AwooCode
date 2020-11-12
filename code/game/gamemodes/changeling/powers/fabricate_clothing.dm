@@ -268,7 +268,7 @@ var/global/list/changeling_fabricated_clothing = list(
 	..()
 	registered_user = user
 
-/obj/item/weapon/card/id/syndicate/changeling/initialize()
+/obj/item/weapon/card/id/syndicate/changeling/Initialize()
 	. = ..()
 	access = null
 
@@ -286,5 +286,5 @@ var/global/list/changeling_fabricated_clothing = list(
 	if(!registered_user)
 		registered_user = usr
 		usr.set_id_info(src)
-	ui_interact(registered_user)
+	tgui_interact(registered_user)
 	..()

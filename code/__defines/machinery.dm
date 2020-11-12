@@ -2,6 +2,7 @@ var/global/defer_powernet_rebuild = 0      // True if net rebuild will be called
 
 #define CELLRATE 0.002 // Multiplier for watts per tick <> cell storage (e.g., 0.02 means if there is a load of 1000 watts, 20 units will be taken from a cell per second)
                        // It's a conversion constant. power_used*CELLRATE = charge_provided, or charge_used/CELLRATE = power_provided
+#define SMESRATE 0.03333 // Same for SMESes. A different number for some reason.
 
 #define KILOWATTS *1000
 #define MEGAWATTS *1000000
@@ -11,7 +12,13 @@ var/global/defer_powernet_rebuild = 0      // True if net rebuild will be called
 #define DOOR_CRUSH_DAMAGE 20
 #define ALIEN_SELECT_AFK_BUFFER  1    // How many minutes that a person can be AFK before not being allowed to be an alien.
 
+// Constants for machine's use_power
+#define USE_POWER_OFF    0	// No continuous power use
+#define USE_POWER_IDLE   1	// Machine is using power at its idle power level
+#define USE_POWER_ACTIVE 2	// Machine is using power at its active power level
+
 // Channel numbers for power.
+#define CURRENT_CHANNEL -1 // Passed as an argument this means "use whatever current channel is"
 #define EQUIP   1
 #define LIGHT   2
 #define ENVIRON 3
@@ -24,6 +31,11 @@ var/global/defer_powernet_rebuild = 0      // True if net rebuild will be called
 #define MAINT    0x8  // Under maintenance.
 #define EMPED    0x10 // Temporary broken by EMP pulse.
 
+// Remote control states
+#define RCON_NO		1
+#define RCON_AUTO	2
+#define RCON_YES	3
+
 // Used by firelocks
 #define FIREDOOR_OPEN 1
 #define FIREDOOR_CLOSED 2
@@ -34,6 +46,7 @@ var/global/defer_powernet_rebuild = 0      // True if net rebuild will be called
 #define NETWORK_CRESCENT "Spaceport"
 // #define NETWORK_CAFE_DOCK "Cafe Dock"
 #define NETWORK_CARGO "Cargo"
+#define NETWORK_CIRCUITS "Circuits"
 #define NETWORK_CIVILIAN "Civilian"
 // #define NETWORK_CIVILIAN_EAST "Civilian East"
 // #define NETWORK_CIVILIAN_WEST "Civilian West"
@@ -54,12 +67,32 @@ var/global/defer_powernet_rebuild = 0      // True if net rebuild will be called
 #define NETWORK_SECURITY "Security"
 #define NETWORK_INTERROGATION "Interrogation"
 #define NETWORK_TELECOM "Tcomms"
-#define NETWORK_THUNDER "Thunderdome"
+#define NETWORK_THUNDER "Entertainment"		//VOREStation Edit: broader definition
 #define NETWORK_COMMUNICATORS "Communicators"
+#define NETWORK_ALARM_ATMOS "Atmosphere Alarms"
+#define NETWORK_ALARM_POWER "Power Alarms"
+#define NETWORK_ALARM_FIRE "Fire Alarms"
+#define NETWORK_TALON_HELMETS "TalonHelmets" //VOREStation Add
+#define NETWORK_TALON_SHIP "TalonShip" //VOREStation Add
 
 // Those networks can only be accessed by pre-existing terminals. AIs and new terminals can't use them.
 var/list/restricted_camera_networks = list(NETWORK_ERT,NETWORK_MERCENARY,"Secret", NETWORK_COMMUNICATORS)
 
+#define TRANSMISSION_WIRE		0 //Is this ever used? I don't think it is.
+#define TRANSMISSION_RADIO		1 //Radio transmissions (like airlock controller to pump)
+#define TRANSMISSION_SUBSPACE	2 //Like headsets
+#define TRANSMISSION_BLUESPACE	3 //Point-to-point links
+
+#define SIGNAL_NORMAL	0 //Normal subspace signals
+#define SIGNAL_SIMPLE	1 //Normal inter-machinery(?) signals
+#define SIGNAL_FAKE		2 //Untrackable signals
+#define SIGNAL_TEST		4 //Unlogged signals
+
+#define DATA_NORMAL		0 //Normal data
+#define DATA_INTERCOM	1 //Intercoms only
+#define DATA_LOCAL		2 //Intercoms and SBRs
+#define DATA_ANTAG		3 //Antag interception
+#define DATA_FAKE		4 //Not from a real mob
 
 //singularity defines
 #define STAGE_ONE 	1
@@ -68,14 +101,6 @@ var/list/restricted_camera_networks = list(NETWORK_ERT,NETWORK_MERCENARY,"Secret
 #define STAGE_FOUR	7
 #define STAGE_FIVE	9
 #define STAGE_SUPER	11
-
-// computer3 error codes, move lower in the file when it passes dev -Sayu
-#define PROG_CRASH          0x1  // Generic crash.
-#define MISSING_PERIPHERAL  0x2  // Missing hardware.
-#define BUSTED_ASS_COMPUTER 0x4  // Self-perpetuating error.  BAC will continue to crash forever.
-#define MISSING_PROGRAM     0x8  // Some files try to automatically launch a program. This is that failing.
-#define FILE_DRM            0x10 // Some files want to not be copied/moved. This is them complaining that you tried.
-#define NETWORK_FAILURE     0x20
 
 // NanoUI flags
 #define STATUS_INTERACTIVE 2 // GREEN Visability
@@ -106,26 +131,25 @@ var/list/restricted_camera_networks = list(NETWORK_ERT,NETWORK_MERCENARY,"Secret
 #define ATMOS_DEFAULT_VOLUME_MIXER  200 // L.
 #define ATMOS_DEFAULT_VOLUME_PIPE   70  // L.
 
+// These are used by supermatter and supermatter monitor program, mostly for UI updating purposes. Higher should always be worse!
+#define SUPERMATTER_ERROR -1		// Unknown status, shouldn't happen but just in case.
+#define SUPERMATTER_INACTIVE 0		// No or minimal energy
+#define SUPERMATTER_NORMAL 1		// Normal operation
+#define SUPERMATTER_NOTIFY 2		// Ambient temp > 80% of CRITICAL_TEMPERATURE
+#define SUPERMATTER_WARNING 3		// Ambient temp > CRITICAL_TEMPERATURE OR integrity damaged
+#define SUPERMATTER_DANGER 4		// Integrity < 50%
+#define SUPERMATTER_EMERGENCY 5		// Integrity < 25%
+#define SUPERMATTER_DELAMINATING 6	// Pretty obvious.
+
+//wIP - PORT ALL OF THESE TO SUBSYSTEMS AND GET RID OF THE WHOLE LIST PROCESS THING
 // Fancy-pants START/STOP_PROCESSING() macros that lets us custom define what the list is.
 #define START_PROCESSING_IN_LIST(DATUM, LIST) \
-if (DATUM.is_processing) {\
-	if(DATUM.is_processing != #LIST)\
-	{\
-		crash_with("Failed to start processing. [log_info_line(DATUM)] is already being processed by [DATUM.is_processing] but queue attempt occured on [#LIST]."); \
-	}\
-} else {\
-	DATUM.is_processing = #LIST;\
+if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 	LIST += DATUM;\
+	DATUM.datum_flags |= DF_ISPROCESSING\
 }
 
-#define STOP_PROCESSING_IN_LIST(DATUM, LIST) \
-if(DATUM.is_processing) {\
-	if(LIST.Remove(DATUM)) {\
-		DATUM.is_processing = null;\
-	} else {\
-		crash_with("Failed to stop processing. [log_info_line(DATUM)] is being processed by [is_processing] and not found in SSmachines.[#LIST]"); \
-	}\
-}
+#define STOP_PROCESSING_IN_LIST(DATUM, LIST) LIST.Remove(DATUM);DATUM.datum_flags &= ~DF_ISPROCESSING
 
 // Note - I would prefer these be defined machines.dm, but some are used prior in file order. ~Leshana
 #define START_MACHINE_PROCESSING(Datum) START_PROCESSING_IN_LIST(Datum, global.processing_machines)
@@ -139,3 +163,8 @@ if(DATUM.is_processing) {\
 
 #define START_PROCESSING_POWER_OBJECT(Datum) START_PROCESSING_IN_LIST(Datum, global.processing_power_items)
 #define STOP_PROCESSING_POWER_OBJECT(Datum) STOP_PROCESSING_IN_LIST(Datum, global.processing_power_items)
+
+// Computer login types
+#define LOGIN_TYPE_NORMAL 1
+#define LOGIN_TYPE_AI 2
+#define LOGIN_TYPE_ROBOT 3

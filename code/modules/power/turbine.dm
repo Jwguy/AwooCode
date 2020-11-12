@@ -28,6 +28,7 @@
 	icon_state = "compressor"
 	anchored = TRUE
 	density = TRUE
+	can_atmos_pass = ATMOS_PASS_PROC
 	circuit = /obj/item/weapon/circuitboard/machine/power_compressor
 	var/obj/machinery/power/turbine/turbine
 	var/datum/gas_mixture/gas_contained
@@ -85,7 +86,7 @@
 #define COMPFRICTION 5e5
 #define COMPSTARTERLOAD 2800
 
-/obj/machinery/compressor/initialize()
+/obj/machinery/compressor/Initialize()
 	. = ..()
 	default_apply_parts()
 	gas_contained = new()
@@ -95,10 +96,8 @@
 		stat |= BROKEN
 
 // When anchored, don't let air past us.
-/obj/machinery/compressor/CanPass(atom/movable/mover, turf/target, height=1.5, air_group = 0)
-	if(!height || air_group)
-		return !anchored
-	return !density
+/obj/machinery/compressor/CanZASPass(turf/T, is_zone)
+	return !anchored
 
 /obj/machinery/compressor/proc/locate_machinery()
 	if(turbine)
@@ -194,7 +193,7 @@
 #define TURBGENQ 100000
 #define TURBGENG 0.8
 
-/obj/machinery/power/turbine/initialize()
+/obj/machinery/power/turbine/Initialize()
 	. = ..()
 	default_apply_parts()
 	// The outlet is pointed at the direction of the turbine component
@@ -318,7 +317,7 @@
 // Turbine Computer
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/obj/machinery/computer/turbine_computer/initialize()
+/obj/machinery/computer/turbine_computer/Initialize()
 	. = ..()
 	return INITIALIZE_HINT_LATELOAD
 
@@ -346,59 +345,59 @@
 /obj/machinery/computer/turbine_computer/attack_hand(var/mob/user as mob)
 	if((. = ..()))
 		return
-	src.interact(user)
+	tgui_interact(user)
 
-/obj/machinery/computer/turbine_computer/interact(mob/user)
-	return ui_interact(user)
+/obj/machinery/computer/turbine_computer/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "TurbineControl", name)
+		ui.open()
 
-/obj/machinery/computer/turbine_computer/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
+/obj/machinery/computer/turbine_computer/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["connected"] = (compressor && compressor.turbine) ? TRUE : FALSE
 	data["compressor_broke"] = (!compressor || (compressor.stat & BROKEN)) ? TRUE : FALSE
 	data["turbine_broke"] = (!compressor || !compressor.turbine || (compressor.turbine.stat & BROKEN)) ? TRUE : FALSE
 	data["broken"] = (data["compressor_broke"] || data["turbine_broke"])
 	data["door_status"] = door_status ? TRUE : FALSE
+
+	data["online"] = FALSE
+	data["power"] = 0
+	data["rpm"] = 0
+	data["temp"] = 0
+
 	if(compressor && compressor.turbine)
 		data["online"] = compressor.starter
-		data["power"] = DisplayPower(compressor.turbine.lastgen)
+		data["power"] = compressor.turbine.lastgen // DisplayPower
 		data["rpm"] = compressor.rpm
 		data["temp"] = compressor.gas_contained.temperature
 
-	// update the ui if it exists, returns null if no ui is passed/found
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-	if (!ui)
-		// the ui does not exist, so we'll create a new() one
-        // for a list of parameters and their descriptions see the code docs in \code\modules\nano\nanoui.dm
-		ui = new(user, src, ui_key, "turbine_computer.tmpl", name, 520, 440)
-		// when the ui is first opened this is the data it will use
-		ui.set_initial_data(data)
-		// open the new ui window
-		ui.open()
-		// auto update every Master Controller tick
-		ui.set_auto_update(TRUE)
+	return data
 
-/obj/machinery/computer/turbine_computer/Topic(href, href_list)
+/obj/machinery/computer/turbine_computer/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
 	if(..())
-		return
-	if(href_list["power-on"])
-		if(compressor && compressor.turbine)
-			compressor.starter = TRUE
+		return TRUE
+
+	switch(action)
+		if("power-on")
+			if(compressor && compressor.turbine)
+				compressor.starter = TRUE
+				. = TRUE
+		if("power-off")
+			if(compressor && compressor.turbine)
+				compressor.starter = FALSE
+				. = TRUE
+		if("reconnect")
+			locate_machinery()
 			. = TRUE
-	else if(href_list["power-off"])
-		if(compressor && compressor.turbine)
-			compressor.starter = FALSE
+		if("doors")
+			door_status = !door_status
+			for(var/obj/machinery/door/blast/D in src.doors)
+				if (door_status)
+					spawn(0) D.close()
+				else
+					spawn(0)D.open()
 			. = TRUE
-	else if(href_list["reconnect"])
-		locate_machinery()
-		. = TRUE
-	else if(href_list["doors"])
-		door_status = !door_status
-		for(var/obj/machinery/door/blast/D in src.doors)
-			if (door_status)
-				spawn(0) D.close()
-			else
-				spawn(0)D.open()
-		. = TRUE
 
 #undef COMPFRICTION
 #undef COMPSTARTERLOAD

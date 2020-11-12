@@ -121,10 +121,10 @@
 		chargecost_lethal = 200
 
 	firemodes = list(
-		new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, fire_sound='sound/weapons/Taser.ogg', charge_cost = chargecost)),
-		new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, fire_sound='sound/weapons/Laser.ogg', charge_cost = chargecost_lethal)),
-		new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, fire_sound='sound/weapons/Taser.ogg', charge_cost = chargecost, burst = burstmode)),
-		new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, fire_sound='sound/weapons/Laser.ogg', charge_cost = chargecost_lethal, burst = burstmode)),
+		new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)),
+		new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)),
+		new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)),
+		new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)),
 		)
 
 /obj/item/weapon/gun/energy/modular/load_ammo(var/obj/item/C, mob/user)
@@ -142,7 +142,7 @@
 				power_supply = P
 				P.loc = src
 				user.visible_message("[user] inserts [P] into [src].", "<span class='notice'>You insert [P] into [src].</span>")
-				playsound(src.loc, 'sound/weapons/flipblade.ogg', 50, 1)
+				playsound(src, 'sound/weapons/flipblade.ogg', 50, 1)
 				update_icon()
 				update_held_icon()
 		return

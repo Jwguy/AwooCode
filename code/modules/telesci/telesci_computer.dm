@@ -6,7 +6,7 @@
 	circuit = /obj/item/weapon/circuitboard/telesci_console
 	var/sending = 1
 	var/obj/machinery/telepad/telepad = null
-	var/temp_msg = "Telescience control console initialized.<BR>Welcome."
+	var/temp_msg = "Telescience control console initialized. Welcome."
 
 	// VARIABLES //
 	var/teles_left	// How many teleports left until it becomes uncalibrated
@@ -28,6 +28,7 @@
 	var/powerCoefficient = 12.5
 	var/list/crystals = list()
 	var/obj/item/device/gps/inserted_gps
+	var/overmap_range = 3
 
 /obj/machinery/computer/telescience/Destroy()
 	eject()
@@ -37,10 +38,11 @@
 	return ..()
 
 /obj/machinery/computer/telescience/examine(mob/user)
-	..()
-	user << "There are [crystals.len ? crystals.len : "no"] bluespace crystal\s in the crystal slots."
+	. = ..()
+	if(Adjacent(user))
+		. += "There are [crystals.len ? crystals.len : "no"] bluespace crystal\s in the crystal slots."
 
-/obj/machinery/computer/telescience/initialize()
+/obj/machinery/computer/telescience/Initialize()
 	. = ..()
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
@@ -49,7 +51,7 @@
 /obj/machinery/computer/telescience/attackby(obj/item/W, mob/user, params)
 	if(istype(W, /obj/item/weapon/ore/bluespace_crystal))
 		if(crystals.len >= max_crystals)
-			user << "<span class='warning'>There are not enough crystal slots.</span>"
+			to_chat(user, "<span class='warning'>There are not enough crystal slots.</span>")
 			return
 		if(!user.unEquip(W))
 			return
@@ -68,12 +70,12 @@
 		if(M.connectable && istype(M.connectable, /obj/machinery/telepad))
 			telepad = M.connectable
 			M.connectable = null
-			user << "<span class='caution'>You upload the data from the [W.name]'s buffer.</span>"
+			to_chat(user, "<span class='caution'>You upload the data from the [W.name]'s buffer.</span>")
 	else
 		return ..()
 
 /obj/machinery/computer/telescience/proc/get_max_allowed_distance()
-	return Floor(crystals.len * telepad.efficiency * powerCoefficient)
+	return FLOOR((crystals.len * telepad.efficiency * powerCoefficient), 1)
 
 /obj/machinery/computer/telescience/attack_ai(mob/user)
 	src.attack_hand(user)
@@ -81,23 +83,28 @@
 /obj/machinery/computer/telescience/attack_hand(mob/user)
 	if(..())
 		return
-	ui_interact(user)
+	tgui_interact(user)
 
-/obj/machinery/computer/telescience/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1)
-	user.set_machine(src)
+/obj/machinery/computer/telescience/tgui_interact(mob/user, datum/tgui/ui)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "TelesciConsole", name)
+		ui.open()
 
-	var/data[0]
+/obj/machinery/computer/telescience/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+	var/list/data = list()
 	if(!telepad)
 		in_use = 0     //Yeah so if you deconstruct teleporter while its in the process of shooting it wont disable the console
 		data["noTelepad"] = 1
 	else
+		data["noTelepad"] = 0
 		data["insertedGps"] = inserted_gps
 		data["rotation"] = rotation
 		data["currentZ"] = z_co
 		data["cooldown"] = max(0, min(100, round(teleport_cooldown - world.time) / 10))
 		data["crystalCount"] = crystals.len
 		data["maxCrystals"] = max_crystals
-		data["maxPossibleDistance"] = Floor(max_crystals * powerCoefficient * 6); // max efficiency is 6
+		data["maxPossibleDistance"] = FLOOR((max_crystals * powerCoefficient * 6), 1); // max efficiency is 6
 		data["maxAllowedDistance"] = get_max_allowed_distance()
 		data["distance"] = distance
 
@@ -105,10 +112,10 @@
 		if(telepad.panel_open)
 			data["tempMsg"] = "Telepad undergoing physical maintenance operations."
 
-		data["sectorOptions"] = list()
-		for(var/z in using_map.player_levels)
-			data["sectorOptions"] += z
+		//We'll base our options on connected z's or overmap
+		data["sectorOptions"] = using_map.get_map_levels(z, TRUE, overmap_range)
 
+		data["lastTeleData"] = null
 		if(last_tele_data)
 			data["lastTeleData"] = list()
 			data["lastTeleData"]["src_x"] = last_tele_data.src_x
@@ -116,12 +123,61 @@
 			data["lastTeleData"]["distance"] = last_tele_data.distance
 			data["lastTeleData"]["time"] = last_tele_data.time
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-	if (!ui)
-		ui = new(user, src, ui_key, "telescience_console.tmpl", src.name, 400, 450)
-		ui.set_initial_data(data)
-		ui.open()
-		ui.set_auto_update(5)
+	return data
+
+/obj/machinery/computer/telescience/tgui_act(action, list/params, datum/tgui/ui, datum/tgui_state/state)
+	if(..())
+		return TRUE
+	if(!telepad || telepad.panel_open)
+		return TRUE
+
+	switch(action)
+		if("setrotation")
+			rotation = CLAMP(text2num(params["val"]), -900, 900)
+			rotation = round(rotation, 0.01)
+
+		if("setdistance")
+			distance = CLAMP(text2num(params["val"]), 1, get_max_allowed_distance())
+			distance = FLOOR(distance, 1)
+
+		if("setz")
+			var/new_z = text2num(params["setz"])
+			if(new_z in using_map.player_levels)
+				z_co = new_z
+
+		if("ejectGPS")
+			if(inserted_gps)
+				inserted_gps.forceMove(loc)
+				inserted_gps = null
+
+		if("setMemory")
+			if(last_target && inserted_gps)
+				// TODO - What was this even supposed to do??
+				//inserted_gps.locked_location = last_target
+				temp_msg = "Location saved."
+			else
+				temp_msg = "ERROR! No data was stored."
+
+		if("send")
+			sending = 1
+			teleport(usr)
+
+		if("receive")
+			sending = 0
+			teleport(usr)
+
+		if("recal")
+			recalibrate()
+			sparks()
+			temp_msg = "NOTICE: Calibration successful."
+
+		if("eject")
+			eject()
+			temp_msg = "NOTICE: Bluespace crystals ejected."
+		else
+			return FALSE
+
+	return TRUE
 
 /obj/machinery/computer/telescience/proc/sparks()
 	if(telepad)
@@ -151,12 +207,12 @@
 			sparks()
 			if(telepad)
 				var/L = get_turf(telepad)
-				var/blocked = list(/mob/living/simple_animal/hostile)
-				var/list/hostiles = typesof(/mob/living/simple_animal/hostile) - blocked
+				var/blocked = list(/mob/living/simple_mob/hostile)
+				var/list/hostiles = typesof(/mob/living/simple_mob/hostile) - blocked
 				playsound(L, 'sound/effects/phasein.ogg', 100, 1, extrarange = 3, falloff = 5)
 				for(var/i in 1 to rand(1,4))
 					var/chosen = pick(hostiles)
-					var/mob/living/simple_animal/hostile/H = new chosen
+					var/mob/living/simple_mob/hostile/H = new chosen
 					H.forceMove(L)
 			return
 		if(99)
@@ -173,7 +229,7 @@
 		return
 
 	if(telepad)
-		var/trueDistance = Clamp(distance + distance_off, 1, get_max_allowed_distance())
+		var/trueDistance = CLAMP(distance + distance_off, 1, get_max_allowed_distance())
 		var/trueRotation = rotation + rotation_off
 
 		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad.x, telepad.y, trueRotation, trueDistance)
@@ -194,10 +250,10 @@
 		flick("pad-beam", telepad)
 
 		if(spawn_time > 15) // 1.5 seconds
-			playsound(telepad.loc, 'sound/weapons/flash.ogg', 50, 1)
+			playsound(telepad, 'sound/weapons/flash.ogg', 50, 1)
 			// Wait depending on the time the projectile took to get there
 			teleporting = 1
-			temp_msg = "Powering up bluespace crystals.<BR>Please wait."
+			temp_msg = "Powering up bluespace crystals. Please wait."
 
 		spawn(spawn_time) // in deciseconds
 			if(!telepad)
@@ -217,12 +273,12 @@
 
 			if(!A || (A.flags & BLUE_SHIELDED))
 				telefail()
-				temp_msg = "ERROR!<BR>Target is shielded from bluespace intersection!"
+				temp_msg = "ERROR! Target is shielded from bluespace intersection!"
 				return
 
-			temp_msg = "Teleport successful.<BR>"
+			temp_msg = "Teleport successful. "
 			if(teles_left < 10)
-				temp_msg += "Calibration required soon.<BR>"
+				temp_msg += "Calibration required soon. "
 			temp_msg += "Data printed below."
 
 			var/sparks = get_turf(target)
@@ -240,7 +296,7 @@
 				dest = target
 
 			flick("pad-beam", telepad)
-			playsound(telepad.loc, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
+			playsound(telepad, 'sound/weapons/emitter2.ogg', 25, 1, extrarange = 3, falloff = 5)
 			for(var/atom/movable/ROI in source)
 				// if is anchored, don't let through
 				if(ROI.anchored)
@@ -283,13 +339,13 @@
 			updateDialog()
 
 /obj/machinery/computer/telescience/proc/teleport(mob/user)
-	distance = Clamp(distance, 0, get_max_allowed_distance())
+	distance = CLAMP(distance, 0, get_max_allowed_distance())
 	if(rotation == null || distance == null || z_co == null)
-		temp_msg = "ERROR!<BR>Set a distance, rotation and sector."
+		temp_msg = "ERROR! Set a distance, rotation and sector."
 		return
 	if(distance <= 0)
 		telefail()
-		temp_msg = "ERROR!<BR>No distance selected!"
+		temp_msg = "ERROR! No distance selected!"
 		return
 	if(!(z_co in using_map.player_levels))
 		telefail()
@@ -299,7 +355,7 @@
 		doteleport(user)
 	else
 		telefail()
-		temp_msg = "ERROR!<BR>Calibration required."
+		temp_msg = "ERROR! Calibration required."
 		return
 	return
 
@@ -308,64 +364,6 @@
 		I.forceMove(src.loc)
 		crystals -= I
 	distance = 0
-
-/obj/machinery/computer/telescience/Topic(href, href_list)
-	if(..())
-		return
-	if(!telepad || telepad.panel_open)
-		updateDialog()
-		return
-
-	if(href_list["setrotation"])
-		var/new_rot = input("Please input desired bearing in degrees.", name, rotation) as num
-		if(..()) // Check after we input a value, as they could've moved after they entered something
-			return
-		rotation = Clamp(new_rot, -900, 900)
-		rotation = round(rotation, 0.01)
-
-	if(href_list["setdistance"])
-		var/new_pow = input("Please input desired distance in meters.", name, rotation) as num
-		if(..()) // Check after we input a value, as they could've moved after they entered something
-			return
-		distance = Clamp(new_pow, 1, get_max_allowed_distance())
-		distance = Floor(distance)
-
-	if(href_list["setz"])
-		var/new_z = text2num(href_list["setz"])
-		if(new_z in using_map.player_levels)
-			z_co = new_z
-
-	if(href_list["ejectGPS"])
-		if(inserted_gps)
-			inserted_gps.forceMove(loc)
-			inserted_gps = null
-
-	if(href_list["setMemory"])
-		if(last_target && inserted_gps)
-			// TODO - What was this even supposed to do??
-			//inserted_gps.locked_location = last_target
-			temp_msg = "Location saved."
-		else
-			temp_msg = "ERROR!<BR>No data was stored."
-
-	if(href_list["send"])
-		sending = 1
-		teleport(usr)
-
-	if(href_list["receive"])
-		sending = 0
-		teleport(usr)
-
-	if(href_list["recal"])
-		recalibrate()
-		sparks()
-		temp_msg = "NOTICE:<BR>Calibration successful."
-
-	if(href_list["eject"])
-		eject()
-		temp_msg = "NOTICE:<BR>Bluespace crystals ejected."
-
-	updateDialog()
 
 /obj/machinery/computer/telescience/proc/recalibrate()
 	teles_left = rand(40, 50)

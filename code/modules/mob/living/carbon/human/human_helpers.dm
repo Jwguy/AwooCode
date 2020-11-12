@@ -8,9 +8,9 @@
 		return 1
 	if(feedback)
 		if(status[1] == HUMAN_EATING_NO_MOUTH)
-			src << "Where do you intend to put \the [food]? You don't have a mouth!"
+			to_chat(src, "Where do you intend to put \the [food]? You don't have a mouth!")
 		else if(status[1] == HUMAN_EATING_BLOCKED_MOUTH)
-			src << "<span class='warning'>\The [status[2]] is in the way!</span>"
+			to_chat(src, "<span class='warning'>\The [status[2]] is in the way!</span>")
 	return 0
 
 /mob/living/carbon/human/can_force_feed(var/feeder, var/food, var/feedback = 1)
@@ -19,9 +19,9 @@
 		return 1
 	if(feedback)
 		if(status[1] == HUMAN_EATING_NO_MOUTH)
-			feeder << "Where do you intend to put \the [food]? \The [src] doesn't have a mouth!"
+			to_chat(feeder, "Where do you intend to put \the [food]? \The [src] doesn't have a mouth!")
 		else if(status[1] == HUMAN_EATING_BLOCKED_MOUTH)
-			feeder << "<span class='warning'>\The [status[2]] is in the way!</span>"
+			to_chat(feeder, "<span class='warning'>\The [status[2]] is in the way!</span>")
 	return 0
 
 /mob/living/carbon/human/proc/can_eat_status()
@@ -32,6 +32,28 @@
 		return list(HUMAN_EATING_BLOCKED_MOUTH, blocked)
 	return list(HUMAN_EATING_NO_ISSUE)
 
+/mob/living/carbon/human/proc/get_coverage()
+	var/list/coverage = list()
+	for(var/obj/item/clothing/C in src)
+		if(item_is_in_hands(C))
+			continue
+		if(C.body_parts_covered & HEAD)
+			coverage += list(organs_by_name[BP_HEAD])
+		if(C.body_parts_covered & UPPER_TORSO)
+			coverage += list(organs_by_name[BP_TORSO])
+		if(C.body_parts_covered & LOWER_TORSO)
+			coverage += list(organs_by_name[BP_GROIN])
+		if(C.body_parts_covered & LEGS)
+			coverage += list(organs_by_name[BP_L_LEG], organs_by_name[BP_R_LEG])
+		if(C.body_parts_covered & ARMS)
+			coverage += list(organs_by_name[BP_R_ARM], organs_by_name[BP_L_ARM])
+		if(C.body_parts_covered & FEET)
+			coverage += list(organs_by_name[BP_L_FOOT], organs_by_name[BP_R_FOOT])
+		if(C.body_parts_covered & HANDS)
+			coverage += list(organs_by_name[BP_L_HAND], organs_by_name[BP_R_HAND])
+	return coverage
+
+
 //This is called when we want different types of 'cloaks' to stop working, e.g. when attacking.
 /mob/living/carbon/human/break_cloak()
 	if(mind && mind.changeling) //Changeling visible camo
@@ -41,6 +63,21 @@
 		for(var/obj/item/rig_module/stealth_field/cloaker in suit.installed_modules)
 			if(cloaker.active)
 				cloaker.deactivate()
+	for(var/obj/item/weapon/deadringer/dr in src)
+		dr.uncloak()
+
+/mob/living/carbon/human/is_cloaked()
+	if(mind && mind.changeling && mind.changeling.cloaked) // Ling camo.
+		return TRUE
+	else if(istype(back, /obj/item/weapon/rig)) //Ninja cloak
+		var/obj/item/weapon/rig/suit = back
+		for(var/obj/item/rig_module/stealth_field/cloaker in suit.installed_modules)
+			if(cloaker.active)
+				return TRUE
+	for(var/obj/item/weapon/deadringer/dr in src)
+		if(dr.timer > 20)
+			return TRUE
+	return ..()
 
 /mob/living/carbon/human/get_ear_protection()
 	var/sum = 0
@@ -65,6 +102,8 @@
 	var/obj/item/organ/external/T = organs_by_name[BP_TORSO]
 	if(T && T.robotic >= ORGAN_ROBOT)
 		src.verbs += /mob/living/carbon/human/proc/self_diagnostics
+		src.verbs += /mob/living/carbon/human/proc/reagent_purge //VOREStation Add
+		src.verbs += /mob/living/carbon/human/proc/setmonitor_state
 		var/datum/robolimb/R = all_robolimbs[T.model]
 		synthetic = R
 		return synthetic
@@ -140,7 +179,7 @@
 			compiled_vis |= O.enables_planes
 
 	//Check to see if we have a rig (ugh, blame rigs, desnowflake this)
-	var/obj/item/weapon/rig/rig = back
+	var/obj/item/weapon/rig/rig = get_rig()
 	if(istype(rig) && rig.visor)
 		if(!rig.helmet || (head && rig.helmet == head))
 			if(rig.visor && rig.visor.vision && rig.visor.active && rig.visor.vision.glasses)

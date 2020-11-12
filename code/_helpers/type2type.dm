@@ -68,7 +68,7 @@
 		if (4.0) return EAST
 		if (8.0) return WEST
 		else
-			world.log << "UNKNOWN DIRECTION: [direction]"
+			to_world_log("UNKNOWN DIRECTION: [direction]")
 
 // Turns a direction into text
 /proc/dir2text(direction)
@@ -242,3 +242,158 @@
 
 /proc/isLeap(y)
 	return ((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
+
+//Takes a string and a datum
+//The string is well, obviously the string being checked
+//The datum is used as a source for var names, to check validity
+//Otherwise every single word could technically be a variable!
+/proc/string2listofvars(var/t_string, var/datum/var_source)
+	if(!t_string || !var_source)
+		return list()
+
+	. = list()
+
+	var/var_found = findtext(t_string,"\[") //Not the actual variables, just a generic "should we even bother" check
+	if(var_found)
+		//Find var names
+
+		// "A dog said hi [name]!"
+		// splittext() --> list("A dog said hi ","name]!"
+		// jointext() --> "A dog said hi name]!"
+		// splittext() --> list("A","dog","said","hi","name]!")
+
+		t_string = replacetext(t_string,"\[","\[ ")//Necessary to resolve "word[var_name]" scenarios
+		var/list/list_value = splittext(t_string,"\[")
+		var/intermediate_stage = jointext(list_value, null)
+
+		list_value = splittext(intermediate_stage," ")
+		for(var/value in list_value)
+			if(findtext(value,"]"))
+				value = splittext(value,"]") //"name]!" --> list("name","!")
+				for(var/A in value)
+					if(var_source.vars.Find(A))
+						. += A
+
+/proc/get_end_section_of_type(type)
+	var/strtype = "[type]"
+	var/delim_pos = findlasttext(strtype, "/")
+	if(delim_pos == 0)
+		return strtype
+	return copytext(strtype, delim_pos)
+
+// Concatenates a list of strings into a single string.  A seperator may optionally be provided.
+/proc/list2text(list/ls, sep)
+	if (ls.len <= 1) // Early-out code for empty or singleton lists.
+		return ls.len ? ls[1] : ""
+
+	var/l = ls.len // Made local for sanic speed.
+	var/i = 0      // Incremented every time a list index is accessed.
+
+	if (sep != null)
+		// Macros expand to long argument lists like so: sep, ls[++i], sep, ls[++i], sep, ls[++i], etc...
+		#define S1  sep, ls[++i]
+		#define S4  S1,  S1,  S1,  S1
+		#define S16 S4,  S4,  S4,  S4
+		#define S64 S16, S16, S16, S16
+
+		. = "[ls[++i]]" // Make sure the initial element is converted to text.
+
+		// Having the small concatenations come before the large ones boosted speed by an average of at least 5%.
+		if (l-1 & 0x01) // 'i' will always be 1 here.
+			. = text("[][][]", ., S1) // Append 1 element if the remaining elements are not a multiple of 2.
+		if (l-i & 0x02)
+			. = text("[][][][][]", ., S1, S1) // Append 2 elements if the remaining elements are not a multiple of 4.
+		if (l-i & 0x04)
+			. = text("[][][][][][][][][]", ., S4) // And so on....
+		if (l-i & 0x08)
+			. = text("[][][][][][][][][][][][][][][][][]", ., S4, S4)
+		if (l-i & 0x10)
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S16)
+		if (l-i & 0x20)
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S16, S16)
+		if (l-i & 0x40)
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S64)
+		while (l > i) // Chomp through the rest of the list, 128 elements at a time.
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S64, S64)
+
+		#undef S64
+		#undef S16
+		#undef S4
+		#undef S1
+	else
+		// Macros expand to long argument lists like so: ls[++i], ls[++i], ls[++i], etc...
+		#define S1  ls[++i]
+		#define S4  S1,  S1,  S1,  S1
+		#define S16 S4,  S4,  S4,  S4
+		#define S64 S16, S16, S16, S16
+
+		. = "[ls[++i]]" // Make sure the initial element is converted to text.
+
+		if (l-1 & 0x01) // 'i' will always be 1 here.
+			. += S1 // Append 1 element if the remaining elements are not a multiple of 2.
+		if (l-i & 0x02)
+			. = text("[][][]", ., S1, S1) // Append 2 elements if the remaining elements are not a multiple of 4.
+		if (l-i & 0x04)
+			. = text("[][][][][]", ., S4) // And so on...
+		if (l-i & 0x08)
+			. = text("[][][][][][][][][]", ., S4, S4)
+		if (l-i & 0x10)
+			. = text("[][][][][][][][][][][][][][][][][]", ., S16)
+		if (l-i & 0x20)
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S16, S16)
+		if (l-i & 0x40)
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S64)
+		while (l > i) // Chomp through the rest of the list, 128 elements at a time.
+			. = text("[][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]\
+			          [][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][][]", ., S64, S64)
+
+		#undef S64
+		#undef S16
+		#undef S4
+		#undef S1
+
+// Converts a string into a list by splitting the string at each delimiter found. (discarding the seperator)
+/proc/text2list(text, delimiter="\n")
+	var/delim_len = length(delimiter)
+	if (delim_len < 1)
+		return list(text)
+
+	. = list()
+	var/last_found = 1
+	var/found
+
+	do
+		found       = findtext(text, delimiter, last_found, 0)
+		.          += copytext(text, last_found, found)
+		last_found  = found + delim_len
+	while (found)
+
+/proc/type2parent(child)
+	var/string_type = "[child]"
+	var/last_slash = findlasttext(string_type, "/")
+	if(last_slash == 1)
+		switch(child)
+			if(/datum)
+				return null
+			if(/obj || /mob)
+				return /atom/movable
+			if(/area || /turf)
+				return /atom
+			else
+				return /datum
+
+	return text2path(copytext(string_type, 1, last_slash))

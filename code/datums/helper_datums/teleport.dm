@@ -98,7 +98,6 @@
 
 	var/turf/destturf
 	var/turf/curturf = get_turf(teleatom)
-	var/area/destarea = get_area(destination)
 	if(precision)
 		var/list/posturfs = circlerangeturfs(destination,precision)
 		destturf = safepick(posturfs)
@@ -124,8 +123,6 @@
 			playSpecials(destturf,effectout,soundout)
 	if(C)
 		C.forceMove(destturf)
-
-	destarea.Entered(teleatom)
 
 	return 1
 
@@ -158,11 +155,18 @@
 		precision = rand(1,100)
 
 	var/list/bagholding = teleatom.search_contents_for(/obj/item/weapon/storage/backpack/holding)
+	//VOREStation Addition Start: Prevent taurriding abuse
+	if(istype(teleatom, /mob/living))
+		var/mob/living/L = teleatom
+		if(LAZYLEN(L.buckled_mobs))
+			for(var/mob/rider in L.buckled_mobs)
+				bagholding += rider.search_contents_for(/obj/item/weapon/storage/backpack/holding)
+	//VOREStation Addition End: Prevent taurriding abuse
 	if(bagholding.len)
 		precision = max(rand(1,100)*bagholding.len,100)
 		if(istype(teleatom, /mob/living))
 			var/mob/living/MM = teleatom
-			MM << "<span class='danger'>The Bluespace interface on your [teleatom] interferes with the teleport!</span>"
+			to_chat(MM, "<span class='danger'>The Bluespace interface on your [teleatom] interferes with the teleport!</span>")
 	return 1
 
 /datum/teleport/instant/science/teleportChecks()
@@ -181,16 +185,37 @@
 	if(destination.z in using_map.admin_levels) //CentCom z-level
 		if(istype(teleatom, /obj/mecha))
 			var/obj/mecha/MM = teleatom
-			MM.occupant << "<span class='danger'>\The [MM] would not survive the jump to a location so far away!</span>"
+			to_chat(MM.occupant, "<span class='danger'>\The [MM] would not survive the jump to a location so far away!</span>")
 			return 0
 		if(!isemptylist(teleatom.search_contents_for(/obj/item/weapon/storage/backpack/holding)))
 			teleatom.visible_message("<span class='danger'>\The [teleatom] bounces off of the portal!</span>")
 			return 0
 	*/ //VOREStation Removal End
 	//VOREStation Edit Start
-	if(!local || (destination.z in using_map.player_levels)) //VOREStation Edit
+	var/obstructed = 0
+	var/turf/dest_turf = get_turf(destination)
+	if(local && !(dest_turf.z in using_map.player_levels))
+		if(istype(teleatom, /mob/living))
+			to_chat(teleatom, "<span class='warning'>The portal refuses to carry you that far away!</span>")
+		return 0
+	else if(istype(destination.loc, /obj/belly))
+		var/obj/belly/destination_belly = destination.loc
+		var/mob/living/telenommer = destination_belly.owner
+		if(istype(telenommer))
+			if(istype(teleatom, /obj/machinery) || istype(teleatom, /obj/structure))
+				return 0
+			else if(!isliving(teleatom))
+				return 1
+			else
+				var/mob/living/telemob = teleatom
+				if(telemob.can_be_drop_prey && telenommer.can_be_drop_pred)
+					return 1
+		obstructed = 1
+	else if(!((isturf(destination) && !destination.density) || (isturf(destination.loc) && !destination.loc.density)) || !destination.x || !destination.y || !destination.z)	//If we're inside something or outside universe
+		obstructed = 1
+		to_chat(teleatom, "<span class='warning'>Something is blocking way on the other side!</span>")
+	if(obstructed)
+		return 0
+	else
 		return 1
-	if(istype(teleatom, /mob/living))
-		to_chat(teleatom, "<span class='warning'>The portal refuses to carry you that far away!</span>")
-	return 0
 	//VOREStation Edit End

@@ -13,6 +13,7 @@
 		new /obj/item/weapon/reagent_containers/food/drinks/glass2/mug(src)
 		new /obj/item/weapon/reagent_containers/food/drinks/glass2/wine(src)
 		new /obj/item/weapon/reagent_containers/food/drinks/metaglass(src)
+		new /obj/item/weapon/reagent_containers/food/drinks/metaglass/metapint(src)
 
 /obj/item/weapon/storage/box/glasses
 	name = "box of glasses"
@@ -60,6 +61,10 @@
 	name = "box of half-pint metamorphic glasses"
 	glass_type = /obj/item/weapon/reagent_containers/food/drinks/metaglass
 
+/obj/item/weapon/storage/box/glasses/meta/metapint
+	name = "box of metamorphic pint glasses"
+	glass_type = /obj/item/weapon/reagent_containers/food/drinks/metaglass/metapint
+
 /obj/item/weapon/storage/box/glass_extras
 	name = "box of cocktail garnishings"
 	var/extra_type = /obj/item/weapon/glass_extra
@@ -78,3 +83,11 @@
 /obj/item/weapon/storage/box/glass_extras/sticks
 	name = "box of drink sticks"
 	extra_type = /obj/item/weapon/glass_extra/stick
+
+/obj/item/weapon/storage/box/glasses/coffeecup
+	name = "box of coffee cups"
+	glass_type = /obj/item/weapon/reagent_containers/food/drinks/cup
+
+/obj/item/weapon/storage/box/glasses/coffeemug
+	name = "box of coffee mugs"
+	glass_type = /obj/item/weapon/reagent_containers/food/drinks/britcup

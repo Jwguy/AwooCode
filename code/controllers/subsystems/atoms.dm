@@ -8,9 +8,9 @@ SUBSYSTEM_DEF(atoms)
 	init_order = INIT_ORDER_ATOMS
 	flags = SS_NO_FIRE
 
-	var/initialized = INITIALIZATION_INSSATOMS
+	var/static/initialized = INITIALIZATION_INSSATOMS
 	// var/list/created_atoms // This is never used, so don't bother. ~Leshana
-	var/old_initialized
+	var/static/old_initialized
 
 	var/list/late_loaders
 	var/list/created_atoms
@@ -77,7 +77,7 @@ SUBSYSTEM_DEF(atoms)
 
 	var/start_tick = world.time
 
-	var/result = A.initialize(arglist(arguments))
+	var/result = A.Initialize(arglist(arguments))
 
 	if(start_tick != world.time)
 		BadInitializeCalls[the_type] |= BAD_INIT_SLEPT

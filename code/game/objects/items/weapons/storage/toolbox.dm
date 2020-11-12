@@ -4,7 +4,7 @@
 	icon = 'icons/obj/storage.dmi'
 	icon_state = "red"
 	item_state_slots = list(slot_r_hand_str = "toolbox_red", slot_l_hand_str = "toolbox_red")
-	flags = CONDUCT
+	center_of_mass = list("x" = 16,"y" = 11)
 	force = 10
 	throwforce = 10
 	throw_speed = 1
@@ -14,6 +14,9 @@
 	max_storage_space = ITEMSIZE_COST_SMALL * 7 //enough to hold all starting contents
 	origin_tech = list(TECH_COMBAT = 1)
 	attack_verb = list("robusted")
+	use_sound = 'sound/items/storage/toolbox.ogg'
+	drop_sound = 'sound/items/drop/toolbox.ogg'
+	pickup_sound = 'sound/items/pickup/toolbox.ogg'
 
 /obj/item/weapon/storage/toolbox/emergency
 	name = "emergency toolbox"
@@ -24,7 +27,7 @@
 		/obj/item/weapon/extinguisher/mini,
 		/obj/item/device/radio
 	)
-/obj/item/weapon/storage/toolbox/emergency/initialize()
+/obj/item/weapon/storage/toolbox/emergency/Initialize()
 	if(prob(50))
 		new /obj/item/device/flashlight(src)
 	else
@@ -56,7 +59,7 @@
 		/obj/item/stack/cable_coil/random_belt,
 		/obj/item/stack/cable_coil/random_belt
 	)
-/obj/item/weapon/storage/toolbox/electrical/initialize()
+/obj/item/weapon/storage/toolbox/electrical/Initialize()
 	. = ..()
 	if(prob(5))
 		new /obj/item/clothing/gloves/yellow(src)
@@ -102,7 +105,7 @@
 	var/filled = FALSE
 	attack_verb = list("lunched")
 
-/obj/item/weapon/storage/toolbox/lunchbox/initialize()
+/obj/item/weapon/storage/toolbox/lunchbox/Initialize()
 	if(filled)
 		var/list/lunches = lunchables_lunches()
 		var/lunch = lunches[pick(lunches)]

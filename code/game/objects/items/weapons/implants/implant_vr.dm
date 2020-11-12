@@ -33,6 +33,7 @@
 		source.add_language(LANGUAGE_BIRDSONG)
 		source.add_language(LANGUAGE_SAGARU)
 		source.add_language(LANGUAGE_CANILUNZT)
+		source.add_language(LANGUAGE_SLAVIC)
 		source.add_language(LANGUAGE_SOL_COMMON) //In case they're giving a xenomorph an implant or something.
 
 /obj/item/weapon/implant/vrlanguage/post_implant(mob/source)
@@ -59,12 +60,13 @@
 <b>Function:</b> Resizes the host whenever specific verbal command is received<BR>"}
 	return dat
 
-/obj/item/weapon/implant/sizecontrol/hear_talk(mob/M, msg)
+/obj/item/weapon/implant/sizecontrol/hear_talk(mob/M, list/message_pieces)
 	if(M == imp_in)
 		return
 	if(owner)
 		if(M != owner)
 			return
+	var/msg = multilingual_to_message(message_pieces)
 	if(findtext(msg,"ignore"))
 		return
 	var/list/replacechars = list("&#39;" = "",">" = "","<" = "","(" = "",")" = "", "~" = "")
@@ -104,10 +106,7 @@
 				var/static/regex/size_mult = new/regex("\\d+")
 				if(size_mult.Find(msg))
 					var/resizing_value = text2num(size_mult.match)
-					if(findtext(msg, "centimeter"))		//Because metric system rules
-						H.resize(Clamp(resizing_value/170 , 0.25, 2))		//170 cm is average crewmember, I think
-					else
-						H.resize(Clamp(resizing_value , 0.25, 2))
+					H.resize(CLAMP(resizing_value/100 , 0.25, 2))
 
 
 
@@ -128,7 +127,7 @@
 	description_info = {"Only accessable by those who implanted the victim. Self-implanting allows everyone to change host size. The following special commands are available:
 'Shrink' - host size decreases.
 'Grow' - host size increases.
-'Resize (NUMBER)' or 'Resize (NUMBER) centimeter(s)' - for accurate size control.
+'Resize (NUMBER)' - for accurate size control.
 'Ignore' - keywords in the speech won't have any effect.
 'Implant-toggle' - toggles implant."}
 

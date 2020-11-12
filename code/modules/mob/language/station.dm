@@ -92,7 +92,11 @@
 	signlang_verb = list("gestures with their hands", "gestures with their ears and tail", "gestures with their ears, tail and hands")
 	colour = "tajaran"
 	key = "l"
-	flags = WHITELISTED | SIGNLANG | NO_STUTTER | NONVERBAL
+	flags = WHITELISTED | SIGNLANG | NO_STUTTER //nonverbal define was not needed here, and i need to use it ~Layne
+
+/datum/language/tajsign/broadcast(var/mob/living/speaker, var/message, var/speaker_mask)
+	log_say("(SIGN) [message]", speaker)
+	speaker.say_signlang(message, pick(signlang_verb), src)
 
 /datum/language/tajsign/can_speak_special(var/mob/speaker)	// TODO: If ever we make external organs assist languages, convert this over to the new format
 	var/list/allowed_species = list(SPECIES_TAJ, SPECIES_TESHARI)	// Need a tail and ears and such to use this.
@@ -137,7 +141,7 @@
 	var/list/first_names = file2list('config/names/first_name_skrell.txt')
 	var/list/last_names = file2list('config/names/last_name_skrell.txt')
 	return "[pick(first_names)] [pick(last_names)]"
- 
+
 /datum/language/human
 	name = LANGUAGE_SOL_COMMON
 	desc = "A bastardized hybrid of many languages, including Chinese, English, French, and more; it is the common language of the Sol system."
@@ -201,6 +205,33 @@
 
 /datum/language/seromi/get_random_name(gender)
 	return ..(gender, 1, 4, 1.5)
+
+
+/datum/language/zaddat
+	name = LANGUAGE_ZADDAT
+	desc = "A harsh buzzing language created by the Zaddat following their exodus from their homeworld."
+	speech_verb = "buzzes"
+	ask_verb = "buzzes"
+	exclaim_verb = "croaks"
+	colour = "zaddat"
+	key = "z"
+	flags = WHITELISTED
+	space_chance = 20
+	syllables = list("z", "dz", "i", "iv", "ti", "az", "hix", "xo", "av", "xo", "x", "za", "at", "vi")
+
+/datum/language/promethean
+	name = LANGUAGE_PROMETHEAN
+	desc = "A complex language composed of guttural noises and bioluminescent signals"
+	signlang_verb = list("flickers","flashes","rapidly flashes a light","quickly flickers a light")
+	speech_verb = "gurgles"
+	ask_verb = "gurgles"
+	exclaim_verb = "gurgles"
+	colour = "promethean"
+	key = "t"
+	flags = WHITELISTED | NONVERBAL
+	space_chance = 20
+	syllables = list("gur","gul","gug","gel","ger","geg","gir","gil","gig","gor","gol","gog","ug","ul","ur","uu","el","eg","er","oe","ig","il","ir","oi","og","ol","or","oo")
+
 
 //Syllable Lists
 /*

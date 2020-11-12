@@ -13,6 +13,7 @@ var/global/list/seen_religions = list()
 		seen_religions    |= M.client.prefs.religion*/
 	return
 
+// VOREStation Edits Start
 var/global/list/citizenship_choices = list(
 	"Earth",
 	"Mars",
@@ -20,11 +21,19 @@ var/global/list/citizenship_choices = list(
 	"Binma",
 	"Moghes",
 	"Meralar",
-	"Qerr'balak"
+	"Qerr'balak",
+	"Virgo 3b Colony",
+	"Virgo 4 NT Compound",
+	"Venus",
+	"Tiamat",
+	"An-Tahk-Et"
 	)
 
 var/global/list/home_system_choices = list(
+	"Virgo-Erigone",
 	"Sol",
+	"Proxima Centauri",
+	"Procyon",
 	"Vir",
 	"Nyx",
 	"Tau Ceti",
@@ -33,8 +42,12 @@ var/global/list/home_system_choices = list(
 	"Rarkajar"
 	)
 
+
 var/global/list/faction_choices = list(
-	"Sol Central",
+	"Commonwealth of Sol-Procyon",
+	"United Fyrds",
+	"Elysian Colonies",
+	"Ares Confederation",
 	"Vey Med",
 	"Einstein Engines",
 	"Free Trade Union",
@@ -48,6 +61,7 @@ var/global/list/faction_choices = list(
 	"Morpheus Cyberkinetics",
 	"Xion Manufacturing Group"
 	)
+// VOREStation Edits Stop
 
 var/global/list/antag_faction_choices = list()	//Should be populated after brainstorming. Leaving as blank in case brainstorming does not occur.
 
@@ -59,10 +73,23 @@ var/global/list/antag_visiblity_choices = list(
 
 var/global/list/religion_choices = list(
 	"Unitarianism",
-	"Hinduism",
-	"Buddhist",
+	"Neopaganism",
 	"Islam",
 	"Christianity",
+	"Judaism",
+	"Hinduism",
+	"Buddhism",
+	"Pleromanism",
+	"Spectralism",
+	"Phact Shintoism",
+	"Kishari Faith",
+	"Hauler Faith",
+	"Nock",
+	"Singulitarian Worship",
+	"Xilar Qall",
+	"Tajr-kii Rarkajar",
 	"Agnosticism",
-	"Deism"
+	"Deism",
+	"Neo-Moreauism",
+	"Orthodox Moreauism"
 	)

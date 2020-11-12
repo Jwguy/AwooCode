@@ -16,8 +16,9 @@
 #define TICK *world.tick_lag
 #define TICKS *world.tick_lag
 
-#define DS2TICKS(DS) (DS/world.tick_lag)	// Convert deciseconds to ticks
-#define TICKS2DS(T) (T TICKS) 				// Convert ticks to deciseconds
+#define DS2TICKS(DS) ((DS)/world.tick_lag)	// Convert deciseconds to ticks
+#define TICKS2DS(T) ((T) TICKS) 				// Convert ticks to deciseconds
+#define DS2NEARESTTICK(DS) TICKS2DS(-round(-(DS2TICKS(DS))))
 
 /proc/get_game_time()
 	var/global/time_offset = 0
@@ -35,27 +36,27 @@
 
 	return wtime + (time_offset + wusage) * world.tick_lag
 
-var/roundstart_hour
+GLOBAL_VAR_INIT(roundstart_hour, pick(2,7,12,17))
 var/station_date = ""
 var/next_station_date_change = 1 DAY
 
-#define duration2stationtime(time) time2text(station_time_in_ticks + time, "hh:mm")
-#define worldtime2stationtime(time) time2text(roundstart_hour HOURS + time, "hh:mm")
-#define round_duration_in_ticks (round_start_time ? world.time - round_start_time : 0)
-#define station_time_in_ticks (roundstart_hour HOURS + round_duration_in_ticks)
+#define duration2stationtime(time) time2text(station_time_in_ds + time, "hh:mm")
+#define worldtime2stationtime(time) time2text(GLOB.roundstart_hour HOURS + time, "hh:mm")
+#define round_duration_in_ds (GLOB.round_start_time ? world.time - GLOB.round_start_time : 0)
+#define station_time_in_ds (GLOB.roundstart_hour HOURS + round_duration_in_ds)
 
 /proc/stationtime2text()
-	return time2text(station_time_in_ticks, "hh:mm")
+	return time2text(station_time_in_ds + GLOB.timezoneOffset, "hh:mm")
 
 /proc/stationdate2text()
 	var/update_time = FALSE
-	if(station_time_in_ticks > next_station_date_change)
+	if(station_time_in_ds > next_station_date_change)
 		next_station_date_change += 1 DAY
 		update_time = TRUE
 	if(!station_date || update_time)
-		var/extra_days = round(station_time_in_ticks / (1 DAY)) DAYS
+		var/extra_days = round(station_time_in_ds / (1 DAY)) DAYS
 		var/timeofday = world.timeofday + extra_days
-		station_date = num2text((text2num(time2text(timeofday, "YYYY"))+544)) + "-" + time2text(timeofday, "MM-DD")
+		station_date = num2text((text2num(time2text(timeofday, "YYYY"))+300)) + "-" + time2text(timeofday, "MM-DD") //VOREStation Edit
 	return station_date
 
 //ISO 8601
@@ -63,6 +64,13 @@ var/next_station_date_change = 1 DAY
 	var/date_portion = time2text(world.timeofday, "YYYY-MM-DD")
 	var/time_portion = time2text(world.timeofday, "hh:mm:ss")
 	return "[date_portion]T[time_portion]"
+
+/proc/get_timezone_offset()
+	var/midnight_gmt_here = text2num(time2text(0,"hh")) * 36000
+	if(midnight_gmt_here > 12 HOURS)
+		return 24 HOURS - midnight_gmt_here
+	else
+		return midnight_gmt_here
 
 /proc/gameTimestamp(format = "hh:mm:ss", wtime=null)
 	if(!wtime)
@@ -83,19 +91,19 @@ proc/isDay(var/month, var/day)
 
 var/next_duration_update = 0
 var/last_round_duration = 0
-var/round_start_time = 0
+GLOBAL_VAR_INIT(round_start_time, 0)
 
 /hook/roundstart/proc/start_timer()
-	round_start_time = world.time
+	GLOB.round_start_time = world.time
 	return 1
 
 /proc/roundduration2text()
-	if(!round_start_time)
+	if(!GLOB.round_start_time)
 		return "00:00"
 	if(last_round_duration && world.time < next_duration_update)
 		return last_round_duration
 
-	var/mills = round_duration_in_ticks // 1/10 of a second, not real milliseconds but whatever
+	var/mills = round_duration_in_ds // 1/10 of a second, not real milliseconds but whatever
 	//var/secs = ((mills % 36000) % 600) / 10 //Not really needed, but I'll leave it here for refrence.. or something
 	var/mins = round((mills % 36000) / 600)
 	var/hours = round(mills / 36000)
@@ -106,15 +114,6 @@ var/round_start_time = 0
 	last_round_duration = "[hours]:[mins]"
 	next_duration_update = world.time + 1 MINUTES
 	return last_round_duration
-
-//Can be useful for things dependent on process timing
-/proc/process_schedule_interval(var/process_name)
-	var/datum/controller/process/process = processScheduler.getProcess(process_name)
-	return process.schedule_interval
-
-/hook/startup/proc/set_roundstart_hour()
-	roundstart_hour = pick(2,7,12,17)
-	return 1
 
 /var/midnight_rollovers = 0
 /var/rollovercheck_last_timeofday = 0
@@ -140,103 +139,36 @@ var/round_start_time = 0
 		. += CEILING(i*DELTA_CALC, 1)
 		sleep(i*world.tick_lag*DELTA_CALC)
 		i *= 2
-	while (TICK_USAGE > min(TICK_LIMIT_TO_RUN, GLOB.CURRENT_TICKLIMIT))
+	while (TICK_USAGE > min(TICK_LIMIT_TO_RUN, Master.current_ticklimit))
 
 #undef DELTA_CALC
 
 
 //Takes a value of time in deciseconds.
 //Returns a text value of that number in hours, minutes, or seconds.
-/proc/DisplayTimeText(time_value, truncate = FALSE)
-	var/second = (time_value)*0.1
-	var/second_adjusted = null
-	var/second_rounded = FALSE
-	var/minute = null
-	var/hour = null
-	var/day = null
-
+/proc/DisplayTimeText(time_value, round_seconds_to = 0.1)
+	var/second = round(time_value * 0.1, round_seconds_to)
 	if(!second)
-		return "0 seconds"
-	if(second >= 60)
-		minute = FLOOR(second/60, 1)
-		second = round(second - (minute*60), 0.1)
-		second_rounded = TRUE
-	if(second)	//check if we still have seconds remaining to format, or if everything went into minute.
-		second_adjusted = round(second)	//used to prevent '1 seconds' being shown
-		if(day || hour || minute)
-			if(second_adjusted == 1 && second >= 1)
-				second = " and 1 second"
-			else if(second > 1)
-				second = " and [second_adjusted] seconds"
-			else	//shows a fraction if seconds is < 1
-				if(second_rounded) //no sense rounding again if it's already done
-					second = " and [second] seconds"
-				else
-					second = " and [round(second, 0.1)] seconds"
-		else
-			if(second_adjusted == 1 && second >= 1)
-				second = "[truncate ? "second" : "1 second"]"
-			else if(second > 1)
-				second = "[second_adjusted] seconds"
-			else
-				if(second_rounded)
-					second = "[second] seconds"
-				else
-					second = "[round(second, 0.1)] seconds"
-	else
-		second = null
-
-	if(!minute)
-		return "[second]"
-	if(minute >= 60)
-		hour = FLOOR(minute/60, 1)
-		minute = (minute - (hour*60))
-	if(minute) //alot simpler from here since you don't have to worry about fractions
-		if(minute != 1)
-			if((day || hour) && second)
-				minute = ", [minute] minutes"
-			else if((day || hour) && !second)
-				minute = " and [minute] minutes"
-			else
-				minute = "[minute] minutes"
-		else
-			if((day || hour) && second)
-				minute = ", 1 minute"
-			else if((day || hour) && !second)
-				minute = " and 1 minute"
-			else
-				minute = "[truncate ? "minute" : "1 minute"]"
-	else
-		minute = null
-
-	if(!hour)
-		return "[minute][second]"
-	if(hour >= 24)
-		day = FLOOR(hour/24, 1)
-		hour = (hour - (day*24))
+		return "right now"
+	if(second < 60)
+		return "[second] second[(second != 1)? "s":""]"
+	var/minute = FLOOR(second / 60, 1)
+	second = MODULUS(second, 60)
+	var/secondT
+	if(second)
+		secondT = " and [second] second[(second != 1)? "s":""]"
+	if(minute < 60)
+		return "[minute] minute[(minute != 1)? "s":""][secondT]"
+	var/hour = FLOOR(minute / 60, 1)
+	minute = MODULUS(minute, 60)
+	var/minuteT
+	if(minute)
+		minuteT = " and [minute] minute[(minute != 1)? "s":""]"
+	if(hour < 24)
+		return "[hour] hour[(hour != 1)? "s":""][minuteT][secondT]"
+	var/day = FLOOR(hour / 24, 1)
+	hour = MODULUS(hour, 24)
+	var/hourT
 	if(hour)
-		if(hour != 1)
-			if(day && (minute || second))
-				hour = ", [hour] hours"
-			else if(day && (!minute || !second))
-				hour = " and [hour] hours"
-			else
-				hour = "[hour] hours"
-		else
-			if(day && (minute || second))
-				hour = ", 1 hour"
-			else if(day && (!minute || !second))
-				hour = " and 1 hour"
-			else
-				hour = "[truncate ? "hour" : "1 hour"]"
-	else
-		hour = null
-
-	if(!day)
-		return "[hour][minute][second]"
-	if(day > 1)
-		day = "[day] days"
-	else
-		day = "[truncate ? "day" : "1 day"]"
-
-	return "[day][hour][minute][second]"
+		hourT = " and [hour] hour[(hour != 1)? "s":""]"
+	return "[day] day[(day != 1)? "s":""][hourT][minuteT][secondT]"

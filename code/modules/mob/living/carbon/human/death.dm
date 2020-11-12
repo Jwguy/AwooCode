@@ -12,7 +12,7 @@
 
 	for(var/obj/item/organ/I in internal_organs)
 		I.removed()
-		if(istype(loc,/turf))
+		if(isturf(I?.loc)) // Some organs qdel themselves or other things when removed
 			I.throw_at(get_edge_target_turf(src,pick(alldirs)),rand(1,3),30)
 
 	for(var/obj/item/organ/external/E in src.organs)
@@ -61,11 +61,11 @@
 
 	//Handle brain slugs.
 	var/obj/item/organ/external/Hd = get_organ(BP_HEAD)
-	var/mob/living/simple_animal/borer/B
+	var/mob/living/simple_mob/animal/borer/B
 
 	if(Hd)
 		for(var/I in Hd.implants)
-			if(istype(I,/mob/living/simple_animal/borer))
+			if(istype(I,/mob/living/simple_mob/animal/borer))
 				B = I
 	if(B)
 		if(!B.ckey && ckey && B.controlling)
@@ -81,8 +81,14 @@
 
 	callHook("death", list(src, gibbed))
 
+	if(mind)
+		// SSgame_master.adjust_danger(gibbed ? 40 : 20)  // VOREStation Edit - We don't use SSgame_master yet.
+		for(var/mob/observer/dead/O in mob_list)
+			if(O.client && O.client.is_preference_enabled(/datum/client_preference/show_dsay))
+				to_chat(O, "<span class='deadsay'><b>[src]</b> has died in <b>[get_area(src)]</b>. [ghost_follow_link(src, O)] </span>")
+
 	if(!gibbed && species.death_sound)
-		playsound(loc, species.death_sound, 80, 1, 1)
+		playsound(src, species.death_sound, 80, 1, 1)
 
 	if(ticker && ticker.mode)
 		sql_report_death(src)

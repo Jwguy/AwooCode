@@ -57,15 +57,13 @@
 	mouse_opacity = 0
 	var/resonance_damage = 20
 
-/obj/effect/resonance/initialize(mapload, var/creator = null, var/timetoburst)
+/obj/effect/resonance/Initialize(mapload, var/creator = null, var/timetoburst)
 	. = ..()
 	// Start small and grow to big size as we are about to burst
 	transform = matrix()*0.75
 	animate(src, transform = matrix()*1.5, time = timetoburst)
 	// Queue the actual bursting
-	spawn(timetoburst)
-		if(!QDELETED(src))
-			burst(creator)
+	addtimer(CALLBACK(src, ./proc/burst, creator), timetoburst)
 
 /obj/effect/resonance/proc/burst(var/creator = null)
 	var/turf/T = get_turf(src)
@@ -101,7 +99,7 @@
 	layer = ABOVE_MOB_LAYER
 	duration = 4
 
-/obj/effect/temp_visual/resonance_crush/initialize()
+/obj/effect/temp_visual/resonance_crush/Initialize()
 	. = ..()
 	transform = matrix()*1.5
 	animate(src, transform = matrix()*0.1, alpha = 50, time = 4)

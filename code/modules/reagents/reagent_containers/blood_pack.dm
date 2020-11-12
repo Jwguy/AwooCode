@@ -3,8 +3,8 @@
 	desc = "This box contains blood packs."
 	icon_state = "sterile"
 
-/obj/item/weapon/storage/box/bloodpacks/New()
-		..()
+/obj/item/weapon/storage/box/bloodpacks/Initialize()
+		. = ..()
 		new /obj/item/weapon/reagent_containers/blood/empty(src)
 		new /obj/item/weapon/reagent_containers/blood/empty(src)
 		new /obj/item/weapon/reagent_containers/blood/empty(src)
@@ -21,19 +21,22 @@
 	icon = 'icons/obj/bloodpack.dmi'
 	icon_state = "empty"
 	item_state = "bloodpack_empty"
+	drop_sound = 'sound/items/drop/food.ogg'
+	pickup_sound = 'sound/items/pickup/food.ogg'
 	volume = 200
 	var/label_text = ""
 
 	var/blood_type = null
+	var/reag_id = "blood"
 
-/obj/item/weapon/reagent_containers/blood/New()
-	..()
+/obj/item/weapon/reagent_containers/blood/Initialize()
+	. = ..()
 	base_name = name
 	base_desc = desc
 	if(blood_type != null)
 		label_text = "[blood_type]"
 		update_iv_label()
-		reagents.add_reagent("blood", 200, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null))
+		reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null))
 		update_icon()
 
 /obj/item/weapon/reagent_containers/blood/on_reagent_change()
@@ -92,6 +95,14 @@
 
 /obj/item/weapon/reagent_containers/blood/OMinus
 	blood_type = "O-"
+
+/obj/item/weapon/reagent_containers/blood/synthplas
+	blood_type = "O-"
+	reag_id = "synthblood_dilute"
+
+/obj/item/weapon/reagent_containers/blood/synthblood
+	blood_type = "O-"
+	reag_id = "synthblood"
 
 /obj/item/weapon/reagent_containers/blood/empty
 	name = "Empty BloodPack"

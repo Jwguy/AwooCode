@@ -19,18 +19,29 @@
 		return ..()
 	else
 		M.death()
-		user << "<b>ERROR ERROR ERROR</b>"
+		to_chat(user, "<b>ERROR ERROR ERROR</b>")
 
 /obj/item/device/aicard/attack_self(mob/user)
+	tgui_interact(user)
 
-	ui_interact(user)
+/obj/item/device/aicard/tgui_interact(mob/user, datum/tgui/ui = null, datum/tgui_state/custom_state)
+	ui = SStgui.try_update_ui(user, src, ui)
+	if(!ui)
+		ui = new(user, src, "AICard", "[name]") // 600, 394
+		ui.open()
+	if(custom_state)
+		ui.set_state(custom_state)
 
-/obj/item/device/aicard/ui_interact(mob/user, ui_key = "main", var/datum/nanoui/ui = null, var/force_open = 1, var/datum/topic_state/state = inventory_state)
+/obj/item/device/aicard/tgui_state(mob/user)
+	return GLOB.tgui_inventory_state
+
+/obj/item/device/aicard/tgui_data(mob/user)
 	var/data[0]
+
 	data["has_ai"] = carded_ai != null
 	if(carded_ai)
 		data["name"] = carded_ai.name
-		data["hardware_integrity"] = carded_ai.hardware_integrity()
+		data["integrity"] = carded_ai.hardware_integrity()
 		data["backup_capacitor"] = carded_ai.backup_capacitor()
 		data["radio"] = !carded_ai.aiRadio.disabledAi
 		data["wireless"] = !carded_ai.control_disabled
@@ -38,52 +49,42 @@
 		data["flushing"] = flush
 
 		var/laws[0]
-		for(var/datum/ai_law/AL in carded_ai.laws.all_laws())
-			laws[++laws.len] = list("index" = AL.get_index(), "law" = sanitize(AL.law))
+		for(var/datum/ai_law/law in carded_ai.laws.all_laws())
+			if(law in carded_ai.laws.ion_laws) // If we're an ion law, give it an ion index code
+				laws.Add(ionnum() + ". " + law.law)
+			else
+				laws.Add(num2text(law.get_index()) + ". " + law.law)
 		data["laws"] = laws
-		data["has_laws"] = laws.len
+		data["has_laws"] = length(carded_ai.laws.all_laws())
 
-	ui = GLOB.nanomanager.try_update_ui(user, src, ui_key, ui, data, force_open)
-	if (!ui)
-		ui = new(user, src, ui_key, "aicard.tmpl", "[name]", 600, 400, state = state)
-		ui.set_initial_data(data)
-		ui.open()
-		ui.set_auto_update(1)
+	return data
 
-/obj/item/device/aicard/Topic(href, href_list, state)
+/obj/item/device/aicard/tgui_act(action, params)
 	if(..())
-		return 1
+		return TRUE
 
 	if(!carded_ai)
-		return 1
+		return
 
 	var/user = usr
-	if (href_list["wipe"])
-		var/confirm = alert("Are you sure you want to disable this core's power? This cannot be undone once started.", "Confirm Shutdown", "Yes", "No")
-		if(confirm == "Yes" && (CanUseTopic(user, state) == STATUS_INTERACTIVE))
+	switch(action)
+		if("wipe")
+			msg_admin_attack("[key_name_admin(user)] wiped [key_name_admin(AI)] with \the [src].")
 			add_attack_logs(user,carded_ai,"Purged from AI Card")
-			flush = 1
-			carded_ai.suiciding = 1
-			to_chat(carded_ai, "Your power has been disabled!")
-			while (carded_ai && carded_ai.stat != 2)
-				if(carded_ai.controlling_drone && prob(carded_ai.oxyloss)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
-					carded_ai.controlling_drone.release_ai_control("Unit lost. Integrity too low to maintain connection.")
-				carded_ai.adjustOxyLoss(2)
-				carded_ai.updatehealth()
-				sleep(10)
-			flush = 0
-	if (href_list["radio"])
-		carded_ai.aiRadio.disabledAi = text2num(href_list["radio"])
-		to_chat(carded_ai, "<span class='warning'>Your Subspace Transceiver has been [carded_ai.aiRadio.disabledAi ? "disabled" : "enabled"]!</span>")
-		to_chat(user, "<span class='notice'>You [carded_ai.aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver.</span>")
-	if (href_list["wireless"])
-		carded_ai.control_disabled = text2num(href_list["wireless"])
-		to_chat(carded_ai, "<span class='warning'>Your wireless interface has been [carded_ai.control_disabled ? "disabled" : "enabled"]!</span>")
-		to_chat(user, "<span class='notice'>You [carded_ai.control_disabled ? "disable" : "enable"] the AI's wireless interface.</span>")
-		if(carded_ai.control_disabled && carded_ai.controlling_drone)
-			carded_ai.controlling_drone.release_ai_control("Unit control terminated at intellicore port.")
-		update_icon()
-	return 1
+			INVOKE_ASYNC(src, .proc/wipe_ai)
+		if("radio")
+			carded_ai.aiRadio.disabledAi = !carded_ai.aiRadio.disabledAi
+			to_chat(carded_ai, "<span class='warning'>Your Subspace Transceiver has been [carded_ai.aiRadio.disabledAi ? "disabled" : "enabled"]!</span>")
+			to_chat(user, "<span class='notice'>You [carded_ai.aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver.</span>")
+		if("wireless")
+			carded_ai.control_disabled = !carded_ai.control_disabled
+			to_chat(carded_ai, "<span class='warning'>Your wireless interface has been [carded_ai.control_disabled ? "disabled" : "enabled"]!</span>")
+			to_chat(user, "<span class='notice'>You [carded_ai.control_disabled ? "disable" : "enable"] the AI's wireless interface.</span>")
+			if(carded_ai.control_disabled && carded_ai.deployed_shell)
+				carded_ai.disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
+			update_icon()
+	
+	return TRUE
 
 /obj/item/device/aicard/update_icon()
 	overlays.Cut()
@@ -98,7 +99,7 @@
 		icon_state = "aicard"
 
 /obj/item/device/aicard/proc/grab_ai(var/mob/living/silicon/ai/ai, var/mob/living/user)
-	if(!ai.client && !ai.controlling_drone)
+	if(!ai.client && !ai.deployed_shell)
 		to_chat(user, "<span class='danger'>ERROR:</span> AI [ai.name] is offline. Unable to transfer.")
 		return 0
 
@@ -107,16 +108,17 @@
 		return 0
 
 	if(!user.IsAdvancedToolUser() && isanimal(user))
-		var/mob/living/simple_animal/S = user
+		var/mob/living/simple_mob/S = user
 		if(!S.IsHumanoidToolUser(src))
 			return 0
 
 	user.visible_message("\The [user] starts transferring \the [ai] into \the [src]...", "You start transferring \the [ai] into \the [src]...")
-	to_chat(ai, "<span class='danger'>\The [user] is transferring you into \the [src]!</span>")
-	if(ai.controlling_drone)
-		to_chat(ai.controlling_drone, "<span class='danger'>\The [user] is transferring you into \the [src]!</span>")
+	show_message(span("critical", "\The [user] is transferring you into \the [src]!"))
 
 	if(do_after(user, 100))
+		if(carded_ai)
+			to_chat(user, "<span class='danger'>Transfer failed:</span> Existing AI found on remote device. Remove existing AI to install a new one.")
+			return 0
 		if(istype(ai.loc, /turf/))
 			new /obj/structure/AIcore/deactivated(get_turf(ai))
 
@@ -130,8 +132,7 @@
 		ai.control_disabled = 1
 		ai.aiRestorePowerRoutine = 0
 		carded_ai = ai
-		if(ai.controlling_drone)
-			ai.controlling_drone.release_ai_control("Unit control lost.")
+		ai.disconnect_shell("Disconnected from remote shell due to core intelligence transfer.") //If the AI is controlling a borg, force the player back to core!
 
 		if(ai.client)
 			to_chat(ai, "You have been transferred into a mobile core. Remote access lost.")
@@ -168,3 +169,17 @@
 	var/obj/item/weapon/rig/rig = src.get_rig()
 	if(istype(rig))
 		rig.forced_move(direction, user)
+
+/obj/item/device/aicard/proc/wipe_ai()
+	var/mob/living/silicon/ai/AI = carded_ai
+	flush = TRUE
+	AI.suiciding = TRUE
+	to_chat(AI, "Your power has been disabled!")
+	while(AI && AI.stat != DEAD)
+		// This is absolutely evil and I love it.
+		if(AI.deployed_shell && prob(AI.oxyloss)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
+			AI.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
+		AI.adjustOxyLoss(2)
+		AI.updatehealth()
+		sleep(10)
+	flush = FALSE

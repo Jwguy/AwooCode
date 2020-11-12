@@ -53,6 +53,12 @@
 	name = "Black Ammunition Duffle Bag"
 	path = /obj/item/weapon/storage/backpack/dufflebag/syndie/ammo
 
+/datum/uplink_item/item/tools/shield_diffuser
+	name = "Handheld Shield Diffuser"
+	desc = "A small device used to disrupt energy barriers, and allow passage through them."
+	item_cost = 16
+	path = /obj/item/weapon/shield_diffuser
+
 /datum/uplink_item/item/tools/space_suit
 	name = "Space Suit"
 	item_cost = 15
@@ -84,12 +90,18 @@
 	item_cost = 25
 	path = /obj/item/device/radio_jammer
 	desc = "A device which is capable of disrupting subspace communications, preventing the use of headsets, PDAs, and communicators within \
-	a radius of seven meters.  It runs off weapon cells, which can be replaced as needed.  One cell will last for approximately a minute."
+	a radius of seven meters.  It runs off weapon cells, which can be replaced as needed.  One cell will last for approximately ten minutes."
 
 /datum/uplink_item/item/tools/emag
 	name = "Cryptographic Sequencer"
 	item_cost = 30
 	path = /obj/item/weapon/card/emag
+
+/datum/uplink_item/item/tools/graviton
+	name = "Graviton Goggles"
+	desc = "An obvious, if useful pair of advanced imaging goggles that allow you to see objects and turfs through walls."
+	item_cost = 15
+	path = /obj/item/clothing/glasses/graviton
 
 /datum/uplink_item/item/tools/thermal
 	name = "Thermal Imaging Glasses"
@@ -110,6 +122,11 @@
 	name = "Package Bomb (Large)"
 	item_cost = 60
 	path = /obj/item/weapon/storage/box/syndie_kit/demolitions_heavy
+
+/datum/uplink_item/item/tools/integratedcircuitprinter
+	name = "Integrated Circuit Printer (Upgraded)"
+	item_cost = 10
+	path = /obj/item/device/integrated_circuit_printer/upgraded
 
 /*
 /datum/uplink_item/item/tools/packagebomb/huge

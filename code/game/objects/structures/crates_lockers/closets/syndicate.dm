@@ -1,9 +1,7 @@
 /obj/structure/closet/syndicate
 	name = "armory closet"
 	desc = "Why is this here?"
-	icon_state = "syndicate"
-	icon_closed = "syndicate"
-	icon_opened = "syndicateopen"
+	closet_appearance = /decl/closet_appearance/tactical/alt
 
 /obj/structure/closet/syndicate/personal
 	desc = "It's a storage unit for operative gear."
@@ -48,7 +46,7 @@
 /obj/structure/closet/syndicate/resources
 	desc = "An old, dusty locker."
 
-/obj/structure/closet/syndicate/resources/initialize()
+/obj/structure/closet/syndicate/resources/Initialize()
 	. = ..()
 	if(!contents.len)
 		var/common_min = 30 //Minimum amount of minerals in the stack for common minerals
@@ -103,7 +101,7 @@
 /obj/structure/closet/syndicate/resources/everything
 	desc = "It's an emergency storage closet for repairs."
 
-/obj/structure/closet/syndicate/resources/everything/initialize()
+/obj/structure/closet/syndicate/resources/everything/Initialize()
 	var/list/resources = list(
 		/obj/item/stack/material/steel,
 		/obj/item/stack/material/glass,

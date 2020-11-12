@@ -25,20 +25,20 @@
 		"Glass Shattering"		=	"shatter",
 		"Grille Damage"			=	'sound/effects/grillehit.ogg',
 		"Energy Pulse"			=	'sound/effects/EMPulse.ogg',
-		"Airlock"				=	'sound/machines/airlock.ogg',
-		"Airlock Creak"			=	'sound/machines/airlock_creaking.ogg',
+		"Airlock"				=	'sound/machines/door/old_airlock.ogg',
+		"Airlock Creak"			=	'sound/machines/door/airlock_creaking.ogg',
 
 		"Shotgun Pumping"		=	'sound/weapons/shotgunpump.ogg',
 		"Flash"					=	'sound/weapons/flash.ogg',
 		"Bite"					=	'sound/weapons/bite.ogg',
-		"Gun Firing"			=	'sound/weapons/gunshot.ogg',
-		"Desert Eagle Firing"	=	'sound/weapons/deagle.ogg',
-		"Rifle Firing"			=	'sound/weapons/rifleshot.ogg',
-		"Sniper Rifle Firing"	=	'sound/weapons/svd_shot.ogg',
-		"AT Rifle Firing"		=	'sound/weapons/sniper.ogg',
-		"Shotgun Firing"		=	'sound/weapons/shotgun.ogg',
-		"Handgun Firing"		=	'sound/weapons/gunshot3.ogg',
-		"Machinegun Firing"		=	'sound/weapons/machinegun.ogg',
+		"Gun Firing"			=	'sound/weapons/Gunshot1.ogg',
+		"Desert Eagle Firing"	=	'sound/weapons/Gunshot_deagle.ogg',
+		"Rifle Firing"			=	'sound/weapons/Gunshot_generic_rifle.ogg',
+		"Sniper Rifle Firing"	=	'sound/weapons/Gunshot_sniper.ogg',
+		"AT Rifle Firing"		=	'sound/weapons/Gunshot_cannon.ogg',
+		"Shotgun Firing"		=	'sound/weapons/Gunshot_shotgun.ogg',
+		"Handgun Firing"		=	'sound/weapons/Gunshot2.ogg',
+		"Machinegun Firing"		=	'sound/weapons/Gunshot_machinegun.ogg',
 		"Rocket Launcher Firing"=	'sound/weapons/rpg.ogg',
 		"Taser Firing"			=	'sound/weapons/Taser.ogg',
 		"Laser Gun Firing"		=	'sound/weapons/laser.ogg',
@@ -75,7 +75,7 @@
 /obj/item/weapon/spell/audible_deception/on_ranged_cast(atom/hit_atom, mob/living/user)
 	var/turf/T = get_turf(hit_atom)
 	if(selected_sound && pay_energy(200))
-		playsound(T, selected_sound, 80, 1, -1)
+		playsound(src, selected_sound, 80, 1, -1)
 		adjust_instability(1)
 		// Air Horn time.
 		if(selected_sound == 'sound/items/AirHorn.ogg' && pay_energy(3800))
@@ -83,7 +83,7 @@
 			for(var/mob/living/carbon/M in ohearers(6, T))
 				if(M.get_ear_protection() >= 2)
 					continue
-				M.sleeping = 0
+				M.SetSleeping(0)
 				M.stuttering += 20
 				M.ear_deaf += 30
 				M.Weaken(3)
@@ -92,4 +92,4 @@
 					M.Paralyse(4)
 				else
 					M.make_jittery(50)
-				M << "<font color='red' size='7'><b>HONK</b></font>"
+				to_chat(M, "<font color='red' size='7'><b>HONK</b></font>")

@@ -1,21 +1,27 @@
 var/global/list/special_roles = list( //keep synced with the defines BE_* in setup.dm --rastaf
 //some autodetection here.
-// TODO: Update to new antagonist system.
-	"traitor" = IS_MODE_COMPILED("traitor"),             // 0
-	"operative" = IS_MODE_COMPILED("nuclear"),           // 1
-	"changeling" = IS_MODE_COMPILED("changeling"),       // 2
-	"wizard" = IS_MODE_COMPILED("wizard"),               // 3
-	"malf AI" = IS_MODE_COMPILED("malfunction"),         // 4
-	"revolutionary" = IS_MODE_COMPILED("revolution"),    // 5
-	"alien candidate" = 1, //always show                 // 6
-	"positronic brain" = 1,                              // 7
-	"cultist" = IS_MODE_COMPILED("cult"),                // 8
-	"renegade" = 1,                                      // 9
-	"ninja" = "true",                                    // 10
-	"raider" = IS_MODE_COMPILED("heist"),                // 11
-	"diona" = 1,                                         // 12
-	"loyalist" = IS_MODE_COMPILED("revolution"),         // 13
-	"pAI candidate" = 1, // -- TLE                       // 14
+// Change these to 0 if the equivalent mode is disabled for whatever reason!
+	"traitor" = 1,										// 0
+	"operative" = 1,									// 1
+	"changeling" = 1,									// 2
+	"wizard" = 1,										// 3
+	"malf AI" = 1,										// 4
+	"revolutionary" = 1,								// 5
+	"alien candidate" = 1,								// 6
+	"positronic brain" = 1,								// 7
+	"cultist" = 1,										// 8
+	"renegade" = 1,										// 9
+	"ninja" = 1,										// 10
+	"raider" = 1,										// 11
+	"diona" = 1,										// 12
+	"mutineer" = 1,										// 13
+	"loyalist" = 1,										// 14
+	"pAI candidate" = 1,								// 15
+	//VOREStation Add
+	"lost drone" = 1,									// 16
+	"maint pred" = 1,									// 17
+	"morph" = 1,										// 18
+	//VOREStation Add End
 )
 
 /datum/category_item/player_setup_item/antagonism/candidacy
@@ -29,7 +35,7 @@ var/global/list/special_roles = list( //keep synced with the defines BE_* in set
 	S["be_special"]	<< pref.be_special
 
 /datum/category_item/player_setup_item/antagonism/candidacy/sanitize_character()
-	pref.be_special	= sanitize_integer(pref.be_special, 0, 65535, initial(pref.be_special))
+	pref.be_special	= sanitize_integer(pref.be_special, 0, 16777215, initial(pref.be_special)) //VOREStation Edit - 24 bits of support
 
 /datum/category_item/player_setup_item/antagonism/candidacy/content(var/mob/user)
 	if(jobban_isbanned(user, "Syndicate"))

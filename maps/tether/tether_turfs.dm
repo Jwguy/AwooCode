@@ -15,18 +15,22 @@ VIRGO3B_TURF_CREATE(/turf/simulated/floor)
 	return 0
 
 VIRGO3B_TURF_CREATE(/turf/simulated/floor/reinforced)
+
 VIRGO3B_TURF_CREATE(/turf/simulated/floor/tiled/steel_dirty)
 
 VIRGO3B_TURF_CREATE(/turf/simulated/floor/outdoors/dirt)
+/turf/simulated/floor/outdoors/dirt/virgo3b
+	icon = 'icons/turf/flooring/asteroid.dmi'
+	icon_state = "asteroid"
+
 VIRGO3B_TURF_CREATE(/turf/simulated/floor/outdoors/rocks)
+
 VIRGO3B_TURF_CREATE(/turf/simulated/floor/outdoors/grass/sif)
 /turf/simulated/floor/outdoors/grass/sif
 	turf_layers = list(
 		/turf/simulated/floor/outdoors/rocks/virgo3b,
 		/turf/simulated/floor/outdoors/dirt/virgo3b
 		)
-
-
 
 // Overriding these for the sake of submaps that use them on other planets.
 // This means that mining on tether base and space is oxygen-generating, but solars and mining should use the virgo3b subtype
@@ -61,23 +65,28 @@ VIRGO3B_TURF_CREATE(/turf/simulated/mineral/floor)
 	var/mineral_name
 	if(rare_ore)
 		mineral_name = pickweight(list(
-			"uranium" = 10, 
-			"platinum" = 10, 
-			"hematite" = 20, 
-			"carbon" = 20, 
-			"diamond" = 1, 
-			"gold" = 8, 
-			"silver" = 8, 
-			"phoron" = 18))
+			"marble" = 3,
+			"uranium" = 10,
+			"platinum" = 10,
+			"hematite" = 20,
+			"carbon" = 20,
+			"diamond" = 1,
+			"gold" = 8,
+			"silver" = 8,
+			"phoron" = 18,
+			"lead" = 2,
+			"verdantium" = 1))
 	else
 		mineral_name = pickweight(list(
-			"uranium" = 5, 
-			"platinum" = 5, 
-			"hematite" = 35, 
-			"carbon" = 35, 
-			"gold" = 3, 
-			"silver" = 3, 
-			"phoron" = 25))
+			"marble" = 2,
+			"uranium" = 5,
+			"platinum" = 5,
+			"hematite" = 35,
+			"carbon" = 35,
+			"gold" = 3,
+			"silver" = 3,
+			"phoron" = 25,
+			"lead" = 1))
 	if(mineral_name && (mineral_name in ore_data))
 		mineral = ore_data[mineral_name]
 		UpdateMineral()
@@ -89,34 +98,34 @@ VIRGO3B_TURF_CREATE(/turf/simulated/mineral/floor)
 	var/mineral_name
 	if(rare_ore)
 		mineral_name = pickweight(list(
-			"uranium" = 10, 
-			"platinum" = 10, 
-			"hematite" = 10, 
-			"carbon" = 10, 
-			"diamond" = 4, 
-			"gold" = 15, 
-			"silver" = 15))
+			"marble" = 7,
+			"uranium" = 10,
+			"platinum" = 10,
+			"hematite" = 10,
+			"carbon" = 10,
+			"diamond" = 4,
+			"gold" = 15,
+			"silver" = 15,
+			"lead" = 5,
+			"verdantium" = 2))
 	else
 		mineral_name = pickweight(list(
-			"uranium" = 7, 
-			"platinum" = 7, 
-			"hematite" = 28, 
-			"carbon" = 28, 
-			"diamond" = 2, 
-			"gold" = 7, 
-			"silver" = 7))
+			"marble" = 5,
+			"uranium" = 7,
+			"platinum" = 7,
+			"hematite" = 28,
+			"carbon" = 28,
+			"diamond" = 2,
+			"gold" = 7,
+			"silver" = 7,
+			"lead" = 4,
+			"verdantium" = 1))
 	if(mineral_name && (mineral_name in ore_data))
 		mineral = ore_data[mineral_name]
 		UpdateMineral()
 	update_icon()
 
 //Unsimulated
-/turf/unsimulated/wall/planetary/virgo3b
-	name = "facility wall"
-	desc = "An eight-meter tall carbyne wall. For when the wildlife on your planet is mostly militant megacorps."
-	alpha = 0xFF
-	VIRGO3B_SET_ATMOS
-
 /turf/unsimulated/mineral/virgo3b
 	blocks_air = TRUE
 
@@ -124,20 +133,11 @@ VIRGO3B_TURF_CREATE(/turf/simulated/mineral/floor)
 	icon = 'icons/turf/flooring/tiles_vr.dmi'
 	icon_state = "steel"
 
-
-/turf/unsimulated/wall
-	blocks_air = 1
-
-/turf/unsimulated/wall/planetary
-	blocks_air = 0
-
 // Some turfs to make floors look better in centcom tram station.
-
-
 
 /turf/unsimulated/floor/techfloor_grid
 	name = "floor"
-	icon = 'icons/turf/flooring/techfloor_vr.dmi'
+	icon = 'icons/turf/flooring/techfloor.dmi'
 	icon_state = "techfloor_grid"
 
 /turf/unsimulated/floor/maglev
@@ -163,9 +163,11 @@ VIRGO3B_TURF_CREATE(/turf/simulated/mineral/floor)
 // Bluespace jump turf!
 /turf/space/bluespace
 	name = "bluespace"
+	icon = 'icons/turf/space_vr.dmi'
 	icon_state = "bluespace"
-/turf/space/bluespace/initialize()
+/turf/space/bluespace/Initialize()
 	..()
+	icon = 'icons/turf/space_vr.dmi'
 	icon_state = "bluespace"
 
 // Desert jump turf!
@@ -173,7 +175,7 @@ VIRGO3B_TURF_CREATE(/turf/simulated/mineral/floor)
 	name = "sand transit"
 	icon = 'icons/turf/transit_vr.dmi'
 	icon_state = "desert_ns"
-/turf/space/sandyscroll/initialize()
+/turf/space/sandyscroll/Initialize()
 	..()
 	icon_state = "desert_ns"
 
@@ -182,7 +184,7 @@ VIRGO3B_TURF_CREATE(/turf/simulated/mineral/floor)
 /turf/simulated/sky/virgo3b
 	color = "#FFBBBB"
 
-/turf/simulated/sky/virgo3b/initialize()
+/turf/simulated/sky/virgo3b/Initialize()
 	SSplanets.addTurf(src)
 	set_light(2, 2, "#FFBBBB")
 

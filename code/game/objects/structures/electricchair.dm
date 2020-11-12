@@ -34,10 +34,10 @@
 	else
 		on = 1
 		icon_state = "echair1"
-	usr << "<span class='notice'>You switch [on ? "on" : "off"] [src].</span>"
+	to_chat(usr, "<span class='notice'>You switch [on ? "on" : "off"] [src].</span>")
 	return
 
-/obj/structure/bed/chair/e_chair/rotate()
+/obj/structure/bed/chair/e_chair/rotate_clockwise()
 	..()
 	overlays.Cut()
 	overlays += image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir)	//there's probably a better way of handling this, but eh. -Pete
@@ -56,7 +56,7 @@
 		return
 	if(!A.powered(EQUIP))
 		return
-	A.use_power(EQUIP, 5000)
+	A.use_power_oneoff(5000, EQUIP)
 	var/light = A.power_light
 	A.updateicon()
 

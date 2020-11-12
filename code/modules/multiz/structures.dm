@@ -17,7 +17,7 @@
 
 	var/const/climb_time = 2 SECONDS
 
-/obj/structure/ladder/initialize()
+/obj/structure/ladder/Initialize()
 	. = ..()
 	// the upper will connect to the lower
 	if(allowed_directions & DOWN) //we only want to do the top one, as it will initialize the ones before it.
@@ -48,25 +48,20 @@
 	var/obj/structure/ladder/target_ladder = getTargetLadder(M)
 	if(!target_ladder)
 		return
-	if(!M.Move(get_turf(src)))
+	if(!(M.loc == loc) && !M.Move(get_turf(src)))
 		to_chat(M, "<span class='notice'>You fail to reach \the [src].</span>")
 		return
 
-	var/direction = target_ladder == target_up ? "up" : "down"
-
-	M.visible_message("<span class='notice'>\The [M] begins climbing [direction] \the [src]!</span>",
-	"You begin climbing [direction] \the [src]!",
-	"You hear the grunting and clanging of a metal ladder being used.")
-
-	target_ladder.audible_message("<span class='notice'>You hear something coming [direction] \the [src]</span>")
-
-	if(do_after(M, climb_time, src))
-		climbLadder(M, target_ladder)
+	climbLadder(M, target_ladder)
 
 /obj/structure/ladder/attack_ghost(var/mob/M)
 	var/target_ladder = getTargetLadder(M)
 	if(target_ladder)
 		M.forceMove(get_turf(target_ladder))
+
+/obj/structure/ladder/attack_robot(var/mob/M)
+	attack_hand(M)
+	return
 
 /obj/structure/ladder/proc/getTargetLadder(var/mob/M)
 	if((!target_up && !target_down) || (target_up && !istype(target_up.loc, /turf) || (target_down && !istype(target_down.loc,/turf))))
@@ -101,13 +96,21 @@
 /mob/observer/ghost/may_climb_ladders(var/ladder)
 	return TRUE
 
-/obj/structure/ladder/proc/climbLadder(var/mob/M, var/target_ladder)
-	var/turf/T = get_turf(target_ladder)
-	for(var/atom/A in T)
-		if(!A.CanPass(M, M.loc, 1.5, 0))
-			to_chat(M, "<span class='notice'>\The [A] is blocking \the [src].</span>")
-			return FALSE
-	return M.Move(T)
+/obj/structure/ladder/proc/climbLadder(var/mob/M, var/obj/target_ladder)
+	var/direction = (target_ladder == target_up ? "up" : "down")
+	M.visible_message("<span class='notice'>\The [M] begins climbing [direction] \the [src]!</span>",
+		"You begin climbing [direction] \the [src]!",
+		"You hear the grunting and clanging of a metal ladder being used.")
+
+	target_ladder.audible_message("<span class='notice'>You hear something coming [direction] \the [src]</span>")
+
+	if(do_after(M, climb_time, src))
+		var/turf/T = get_turf(target_ladder)
+		for(var/atom/A in T)
+			if(!A.CanPass(M, M.loc, 1.5, 0))
+				to_chat(M, "<span class='notice'>\The [A] is blocking \the [src].</span>")
+				return FALSE
+		return M.forceMove(T) //VOREStation Edit - Fixes adminspawned ladders
 
 /obj/structure/ladder/CanPass(obj/mover, turf/source, height, airflow)
 	return airflow || !density
@@ -130,9 +133,10 @@
 	density = 0
 	opacity = 0
 	anchored = 1
-	layer = 2.4 // Above turf, but they're sort of the floor, so below objects.
+	flags = ON_BORDER
+	layer = STAIRS_LAYER
 
-/obj/structure/stairs/initialize()
+/obj/structure/stairs/Initialize()
 	. = ..()
 	for(var/turf/turf in locs)
 		var/turf/simulated/open/above = GetAbove(turf)
@@ -154,7 +158,7 @@
 		A.forceMove(target)
 		if(isliving(A))
 			var/mob/living/L = A
-			if(L.pulling)
+			if(L.pulling && !L.pulling.anchored)
 				L.pulling.forceMove(target)
 
 /obj/structure/stairs/proc/upperStep(var/turf/T)

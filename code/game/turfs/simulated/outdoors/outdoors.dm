@@ -20,14 +20,10 @@ var/list/turf_edge_cache = list()
 	// When a turf gets demoted or promoted, this list gets adjusted.  The top-most layer is the layer on the bottom of the list, due to how pop() works.
 	var/list/turf_layers = list(/turf/simulated/floor/outdoors/rocks)
 
-/turf/simulated/floor/outdoors/initialize()
-	update_icon()
-	. = ..()
-
-/turf/simulated/floor/New()
+/turf/simulated/floor/Initialize(mapload)
 	if(outdoors)
 		SSplanets.addTurf(src)
-	..()
+	. = ..()
 
 /turf/simulated/floor/Destroy()
 	if(outdoors)
@@ -50,29 +46,11 @@ var/list/turf_edge_cache = list()
 	else
 		make_indoors()
 
-/turf/simulated/proc/update_icon_edge()
-	if(edge_blending_priority)
-		for(var/checkdir in cardinal)
-			var/turf/simulated/T = get_step(src, checkdir)
-			if(istype(T) && T.edge_blending_priority && edge_blending_priority < T.edge_blending_priority && icon_state != T.icon_state)
-				var/cache_key = "[T.get_edge_icon_state()]-[checkdir]"
-				if(!turf_edge_cache[cache_key])
-					var/image/I = image(icon = 'icons/turf/outdoors_edge.dmi', icon_state = "[T.get_edge_icon_state()]-edge", dir = checkdir, layer = ABOVE_TURF_LAYER)
-					I.plane = TURF_PLANE
-					turf_edge_cache[cache_key] = I
-				add_overlay(turf_edge_cache[cache_key])
-
-/turf/simulated/proc/get_edge_icon_state()
-	return icon_state
-
-/turf/simulated/floor/outdoors/update_icon()
-	..()
-	update_icon_edge()
-
 /turf/simulated/floor/outdoors/mud
 	name = "mud"
 	icon_state = "mud_dark"
 	edge_blending_priority = 3
+	initial_flooring = /decl/flooring/mud
 
 /turf/simulated/floor/outdoors/rocks
 	name = "rocks"
@@ -80,6 +58,8 @@ var/list/turf_edge_cache = list()
 	icon_state = "rock"
 	edge_blending_priority = 1
 
+/turf/simulated/floor/outdoors/rocks/caves
+	outdoors = FALSE
 
 // This proc adds a 'layer' on top of the turf.
 /turf/simulated/floor/outdoors/proc/promote(var/new_turf_type)

@@ -4,7 +4,6 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "camgrenade"
 	item_state = "empgrenade"
-	flags = CONDUCT
 	w_class = ITEMSIZE_SMALL
 	force = 0
 	throwforce = 5.0
@@ -50,7 +49,6 @@
 	icon = 'icons/obj/grenade.dmi'
 	icon_state = "camgrenadebroken"
 	item_state = "empgrenade"
-	flags = CONDUCT
 	force = 5.0
 	w_class = ITEMSIZE_SMALL
 	throwforce = 5.0
@@ -62,13 +60,12 @@
 	name = "broken bug"
 	desc = ""	//Even when it's broken it's inconspicuous
 	icon = 'icons/obj/weapons.dmi'
-	icon_state = "eshield0"
+	icon_state = "eshield"
 	item_state = "nothing"
 	layer = TURF_LAYER+0.2
 	w_class = ITEMSIZE_TINY
 	slot_flags = SLOT_EARS
 	origin_tech = list(TECH_ENGINEERING = 1, TECH_ILLEGAL = 3) //crush it and you lose the data
-	flags = CONDUCT
 	force = 0
 	throwforce = 5.0
 	throw_range = 15
@@ -78,7 +75,7 @@
 	name = "bug"
 	desc = ""	//Nothing to see here
 	icon = 'icons/obj/weapons.dmi'
-	icon_state = "eshield0"
+	icon_state = "eshield"
 	item_state = "nothing"
 	layer = TURF_LAYER+0.2
 	w_class = ITEMSIZE_TINY
@@ -87,9 +84,9 @@
 	camtype = /obj/machinery/camera/bug/spy
 
 /obj/item/device/camerabug/examine(mob/user)
-	. = ..(user, 0)
-	if(.)
-		to_chat(user, "It has a tiny camera inside. Needs to be both configured and brought in contact with monitor device to be fully functional.")
+	. = ..()
+	if(get_dist(user, src) == 0)
+		. += "It has a tiny camera inside. Needs to be both configured and brought in contact with monitor device to be fully functional."
 
 /obj/item/device/camerabug/attackby(obj/item/W as obj, mob/living/user as mob)
 	if(istype(W, /obj/item/device/bug_monitor))
@@ -129,10 +126,7 @@
 		linkedmonitor.unpair(src)
 	linkedmonitor = null
 	..()
-/*
-/obj/item/device/camerabug/hear_talk(mob/M, var/msg, verb, datum/language/speaking)
-	radio.hear_talk(M, msg, speaking)
-*/
+
 /obj/item/device/bug_monitor
 	name = "mobile camera pod monitor"
 	desc = "A portable camera console designed to work with mobile camera pods."
@@ -211,10 +205,7 @@
 		return
 
 	return 1
-/*
-/obj/item/device/bug_monitor/hear_talk(mob/M, var/msg, verb, datum/language/speaking)
-	return radio.hear_talk(M, msg, speaking)
-*/
+
 /obj/item/device/bug_monitor/spy
 	name = "\improper PDA"
 	desc = "A portable microcomputer by Thinktronic Systems, LTD. Functionality determined by a preprogrammed ROM cartridge."
@@ -224,9 +215,9 @@
 	origin_tech = list(TECH_DATA = 1, TECH_ENGINEERING = 1, TECH_ILLEGAL = 3)
 
 /obj/item/device/bug_monitor/spy/examine(mob/user)
-	. = ..(user, 1)
-	if(.)
-		to_chat(user, "The time '12:00' is blinking in the corner of the screen and \the [src] looks very cheaply made.")
+	. = ..()
+	if(Adjacent(user))
+		. += "The time '12:00' is blinking in the corner of the screen and \the [src] looks very cheaply made."
 
 /obj/machinery/camera/bug/check_eye(var/mob/user as mob)
 	return 0

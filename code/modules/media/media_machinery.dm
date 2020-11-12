@@ -54,17 +54,18 @@
 	master_area = null
 
 /obj/machinery/media/Move()
-	..()
+	disconnect_media_source()
+	. = ..()
 	if(anchored)
 		update_music()
 
 /obj/machinery/media/forceMove(var/atom/destination)
 	disconnect_media_source()
-	..()
+	. = ..()
 	if(anchored)
 		update_music()
 
-/obj/machinery/media/initialize()
+/obj/machinery/media/Initialize()
 	. = ..()
 	update_media_source()
 

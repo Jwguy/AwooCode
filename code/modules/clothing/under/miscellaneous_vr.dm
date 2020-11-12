@@ -1,3 +1,6 @@
+/obj/item/clothing/under/customs
+	desc = "A standard SolCom customs uniform. Complete with epaulettes."
+
 /obj/item/clothing/var/hides_bulges = FALSE // OwO wats this?
 
 /obj/item/clothing/under/permit
@@ -6,6 +9,7 @@
 	icon = 'icons/obj/card.dmi'
 	icon_state = "guest"
 	body_parts_covered = 0
+	equip_sound = null
 
 	sprite_sheets = list()
 
@@ -85,7 +89,7 @@
 		H.update_icons() //Just want the matrix transform
 		return
 
-	if (!IsInRange(new_size,25,200))
+	if (!ISINRANGE(new_size,25,200))
 		to_chat(H,"<span class='notice'>The safety features of the uniform prevent you from choosing this size.</span>")
 		return
 
@@ -105,3 +109,25 @@
 		H.resize(original_size)
 		original_size = null
 		H.visible_message("<span class='warning'>The space around [H] distorts as they return to their original size!</span>","<span class='notice'>The space around you distorts as you return to your original size!</span>")
+
+//Same as Nanotrasen Security Uniforms
+/obj/item/clothing/under/ert
+	armor = list(melee = 5, bullet = 10, laser = 10, energy = 5, bomb = 5, bio = 0, rad = 0)
+
+/obj/item/clothing/under/dress/qipao
+	name = "qipao"
+	desc = "A type of feminine body-hugging dress with distinctive Chinese features of Manchu origin."
+	icon = 'icons/obj/clothing/uniforms_vr.dmi'
+	icon_override = 'icons/mob/uniform_vr.dmi'
+	icon_state = "qipao"
+	item_state = "qipao"
+
+/obj/item/clothing/under/dress/qipao/white
+	name = "white qipao"
+	icon_state = "qipao_white"
+	item_state = "qipao_white"
+
+/obj/item/clothing/under/dress/qipao/red
+	name = "red qipao"
+	icon_state = "qipao_red"
+	item_state = "qipao_red"

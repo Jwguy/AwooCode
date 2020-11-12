@@ -38,7 +38,7 @@ Buildable meters
  * @param loc Location
  * @pipe_type
  */
-/obj/item/pipe/initialize(var/mapload, var/_pipe_type, var/_dir, var/obj/machinery/atmospherics/make_from)
+/obj/item/pipe/Initialize(var/mapload, var/_pipe_type, var/_dir, var/obj/machinery/atmospherics/make_from)
 	if(make_from)
 		make_from_existing(make_from)
 	else
@@ -83,6 +83,12 @@ Buildable meters
 		if(PIPING_LAYER_SUPPLY)
 			color = PIPE_COLOR_BLUE
 			name = "[initial(fakeA.name)] supply fitting"
+		if(PIPING_LAYER_FUEL)
+			color = PIPE_COLOR_YELLOW
+			name = "[initial(fakeA.name)] fuel fitting"
+		if(PIPING_LAYER_AUX)
+			color = PIPE_COLOR_CYAN
+			name = "[initial(fakeA.name)] aux fitting"
 	// Or if we were to do it the TG way...
 	// pixel_x = PIPE_PIXEL_OFFSET_X(piping_layer)
 	// pixel_y = PIPE_PIXEL_OFFSET_Y(piping_layer)
@@ -115,22 +121,16 @@ Buildable meters
 	var/obj/machinery/atmospherics/fakeA = pipe_type
 	icon_state = "[initial(fakeA.pipe_state)][mirrored ? "m" : ""]"
 
-/obj/item/pipe/verb/rotate()
+/obj/item/pipe/verb/rotate_clockwise()
 	set category = "Object"
-	set name = "Rotate Pipe"
+	set name = "Rotate Pipe Clockwise"
 	set src in view(1)
 
 	if ( usr.stat || usr.restrained() || !usr.canmove )
 		return
 
-	set_dir(turn(src.dir, -90)) // Rotate clockwise
+	src.set_dir(turn(src.dir, 270))
 	fixdir()
-
-// If you want to disable pipe dir changing when pulled, uncomment this
-// /obj/item/pipe/Move()
-// 	var/old_dir = dir
-// 	. = ..()
-// 	set_dir(old_dir) //pipes changing direction when moved is just annoying and buggy
 
 // Don't let pulling a pipe straighten it out.
 /obj/item/pipe/binary/bendable/Move()

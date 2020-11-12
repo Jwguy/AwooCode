@@ -5,6 +5,7 @@
 	var/metabolism = 0.0015
 	var/lightweight = FALSE //Oof! Nonhelpful bump stumbles.
 	var/trashcan = FALSE //It's always sunny in the wrestling ring.
+	var/eat_minerals = FALSE //HEAVY METAL DIET
 	var/base_species = null // Unused outside of a few species
 	var/selects_bodytype = FALSE // Allows the species to choose from body types intead of being forced to be just one.
 
@@ -19,12 +20,14 @@
 	blurb = "This is a custom species where you can assign various species traits to them as you wish, to \
 	create a (hopefully) balanced species. You will see the options to customize them on the VORE tab once \
 	you select and set this species as your species. Please look at the VORE tab if you select this species."
+	catalogue_data = list(/datum/category_item/catalogue/fauna/custom_species)
 
 	name_language = null // Use the first-name last-name generator rather than a language scrambler
 	min_age = 18
 	max_age = 200
 	health_hud_intensity = 2
 	num_alternate_languages = 3
+	assisted_langs = list(LANGUAGE_EAL, LANGUAGE_ROOTLOCAL, LANGUAGE_ROOTGLOBAL, LANGUAGE_VOX)
 
 	spawn_flags = SPECIES_CAN_JOIN
 	appearance_flags = HAS_HAIR_COLOR | HAS_SKIN_COLOR | HAS_LIPS | HAS_UNDERWEAR | HAS_EYE_COLOR
@@ -49,7 +52,7 @@
 	return base_species
 
 /datum/species/custom/get_race_key()
-	var/datum/species/real = all_species[base_species]
+	var/datum/species/real = GLOB.all_species[base_species]
 	return real.race_key
 
 /datum/species/custom/proc/produceCopy(var/datum/species/to_copy,var/list/traits,var/mob/living/carbon/human/H)
@@ -59,7 +62,7 @@
 	if(ispath(to_copy))
 		to_copy = "[initial(to_copy.name)]"
 	if(istext(to_copy))
-		to_copy = all_species[to_copy]
+		to_copy = GLOB.all_species[to_copy]
 
 	var/datum/species/custom/new_copy = new()
 
@@ -90,6 +93,8 @@
 
 	//Set up a mob
 	H.species = new_copy
+	H.maxHealth = new_copy.total_health
+	H.hunger_rate = new_copy.hunger_factor
 
 	if(new_copy.holder_type)
 		H.holder_type = new_copy.holder_type
